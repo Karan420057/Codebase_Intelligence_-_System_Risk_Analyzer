@@ -24,7 +24,12 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
-export default function AppNavbar({ role = "user" }) {
+export default function AppNavbar({
+  role = "user",
+  user,
+  onSignOut,
+  signingOut = false,
+}) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -119,12 +124,12 @@ export default function AppNavbar({ role = "user" }) {
           >
             <Avatar className="size-8">
               <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                {role === "admin" ? "A" : "U"}
+                {(user?.name || user?.email || role).slice(0, 1).toUpperCase()}
               </AvatarFallback>
             </Avatar>
 
-            <span className="hidden text-sm capitalize sm:inline">
-              {role}
+            <span className="hidden max-w-36 truncate text-sm sm:inline">
+              {user?.name || user?.email || role}
             </span>
 
             <ChevronDown className="hidden size-4 text-muted-foreground sm:block" />
@@ -132,7 +137,12 @@ export default function AppNavbar({ role = "user" }) {
 
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>
-              {role === "admin" ? "Administrator" : "My Account"}
+              <span className="block">{user?.name || "My Account"}</span>
+              {user?.email && (
+                <span className="mt-1 block max-w-44 truncate text-xs font-normal text-muted-foreground">
+                  {user.email}
+                </span>
+              )}
             </DropdownMenuLabel>
 
             <DropdownMenuSeparator />
@@ -150,12 +160,11 @@ export default function AppNavbar({ role = "user" }) {
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
-              onClick={() => {
-                // Connect to your authentication logout handler.
-              }}
+              disabled={signingOut}
+              onClick={() => onSignOut?.()}
             >
               <LogOut className="mr-2 size-4" />
-              Sign out
+              {signingOut ? "Signing out..." : "Sign out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
