@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,6 +11,7 @@ export default function AuthScreen({ mode }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -85,16 +86,30 @@ export default function AuthScreen({ mode }) {
 
           <div className="space-y-2">
             <Label htmlFor="auth-password">Password</Label>
-            <Input
-              id="auth-password"
-              type="password"
-              autoComplete={isRegistering ? 'new-password' : 'current-password'}
-              minLength={isRegistering ? 12 : undefined}
-              maxLength={72}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="auth-password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete={isRegistering ? 'new-password' : 'current-password'}
+                minLength={isRegistering ? 12 : undefined}
+                maxLength={72}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >
+                {showPassword
+                  ? <Eye aria-hidden="true" className="size-4" />
+                  : <EyeOff aria-hidden="true" className="size-4" />}
+              </button>
+            </div>
             {isRegistering && (
               <p className="text-xs text-muted-foreground">
                 Use 12-72 characters.
