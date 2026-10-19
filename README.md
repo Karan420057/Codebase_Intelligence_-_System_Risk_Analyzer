@@ -19,6 +19,8 @@ Requirements: Node.js 20 or newer and a reachable MongoDB instance (local MongoD
    node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
    ```
 
+   GitHub repository lookup works with public repositories without additional configuration. To access private repositories or increase the GitHub API rate limit, set `GITHUB_TOKEN` in `backend/.env` to a GitHub token with read-only repository contents access. The token stays on the backend and is never sent to the browser.
+
 2. Start the API in a terminal:
 
    ```powershell
@@ -38,3 +40,7 @@ Requirements: Node.js 20 or newer and a reachable MongoDB instance (local MongoD
 4. Open the Vite URL shown in the frontend terminal. Create a regular user account at `/signup`, or sign in at `/login` using the bootstrap administrator credentials.
 
 The frontend proxies `/api` requests to the API on port 4000. In production, serve both through the same HTTPS origin (or configure a trusted reverse proxy); production session cookies are marked secure.
+
+## GitHub repository workspace
+
+Signed-in users can connect a GitHub repository URL to open a dedicated page at `/repositories/{owner}/{repo}`. Repository metadata is saved in MongoDB per user and listed in the **Repositories** section across browser sessions. Each repository page shows its metadata, file listing, and latest commit history. Select a file to load its text preview; commit history can be paginated with **Load more commits**. Very large file trees may be shortened by GitHub, and binary files are not previewed.

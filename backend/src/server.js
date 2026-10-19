@@ -6,12 +6,19 @@ import { rateLimit } from 'express-rate-limit'
 import session from 'express-session'
 import helmet from 'helmet'
 import mongoose from 'mongoose'
+import {
+  fetchGithubCommits,
+  fetchGithubFile,
+  fetchGithubRepository,
+  GithubApiError,
+  isGithubName,
+} from './services/github.js'
+import Repository from './models/Repository.js'
 import User from './models/User.js'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const sessionCookieName = 'ci.sid'
 const sessionMaxAge = 8 * 60 * 60 * 1000
-
 function requiredEnvironmentValue(name) {
   const value = process.env[name]?.trim()
   if (!value) {
@@ -143,6 +150,13 @@ async function startServer() {
     legacyHeaders: false,
     message: { error: 'Too many authentication attempts. Try again later.' },
   })
+  const githubRateLimit = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 60,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Too many GitHub requests. Try again in a minute.' },
+  })
 
   app.post('/api/auth/register', authRateLimit, async (request, response) => {
     const { name, email, password } = request.body ?? {}
@@ -248,6 +262,119 @@ async function startServer() {
     response.json({ user: toPublicUser(request.user) })
   })
 
+  app.get('/api/repositories', requireAuth, async (request, response) => {
+    const repositories = await Repository.find({ userId: request.user.id })
+      .sort({ updatedAt: -1 })
+      .select('githubId owner name fullName url description private defaultBranch language stars forks watchers openIssues size pushedAt topics updatedAt')
+      .lean()
+
+    response.json({
+      repositories: repositories.map((repository) => ({
+        id: repository.githubId,
+        owner: repository.owner,
+        name: repository.name,
+        fullName: repository.fullName,
+        url: repository.url,
+        description: repository.description,
+        private: repository.private,
+        defaultBranch: repository.defaultBranch,
+        language: repository.language,
+        stars: repository.stars,
+        forks: repository.forks,
+        watchers: repository.watchers,
+        openIssues: repository.openIssues,
+        size: repository.size,
+        pushedAt: repository.pushedAt,
+        topics: repository.topics,
+        savedAt: repository.updatedAt,
+      })),
+    })
+  })
+
+  app.get('/api/github/:owner/:repo', requireAuth, githubRateLimit, async (request, response) => {
+    const { owner, repo } = request.params
+    if (!isGithubName(owner) || !isGithubName(repo)) {
+      response.status(400).json({ error: 'Enter a valid GitHub owner and repository name.' })
+      return
+    }
+
+    const result = await fetchGithubRepository(owner, repo)
+    await Repository.findOneAndUpdate(
+      { userId: request.user.id, githubId: result.repository.id },
+      {
+        $set: {
+          owner: result.repository.owner.login,
+          name: result.repository.name,
+          fullName: result.repository.fullName,
+          url: result.repository.url,
+          description: result.repository.description || '',
+          private: result.repository.private,
+          defaultBranch: result.repository.defaultBranch,
+          language: result.repository.language,
+          stars: result.repository.stars,
+          forks: result.repository.forks,
+          watchers: result.repository.watchers,
+          openIssues: result.repository.openIssues,
+          size: result.repository.size,
+          pushedAt: result.repository.pushedAt,
+          topics: result.repository.topics,
+        },
+      },
+      { upsert: true, runValidators: true, setDefaultsOnInsert: true },
+    )
+    response.json(result)
+  })
+
+  app.get(
+    '/api/github/:owner/:repo/commits',
+    requireAuth,
+    githubRateLimit,
+    async (request, response) => {
+      const { owner, repo } = request.params
+      const page = Number(request.query.page)
+      if (!isGithubName(owner) || !isGithubName(repo)) {
+        response.status(400).json({ error: 'Enter a valid GitHub owner and repository name.' })
+        return
+      }
+      if (!Number.isInteger(page) || page < 2 || page > 1000) {
+        response.status(400).json({ error: 'Commit page must be a number between 2 and 1000.' })
+        return
+      }
+
+      response.json(await fetchGithubCommits(owner, repo, page))
+    },
+  )
+
+  app.get(
+    '/api/github/:owner/:repo/file',
+    requireAuth,
+    githubRateLimit,
+    async (request, response) => {
+      const { owner, repo } = request.params
+      const path = request.query.path
+      const ref = request.query.ref
+      if (!isGithubName(owner) || !isGithubName(repo)) {
+        response.status(400).json({ error: 'Enter a valid GitHub owner and repository name.' })
+        return
+      }
+      if (
+        typeof path !== 'string'
+        || !path
+        || path.length > 1024
+        || path.split('/').some((part) => !part || part === '.' || part === '..')
+      ) {
+        response.status(400).json({ error: 'Select a valid repository file.' })
+        return
+      }
+      if (ref !== undefined && (typeof ref !== 'string' || ref.length > 255)) {
+        response.status(400).json({ error: 'Select a valid repository branch.' })
+        return
+      }
+
+      response.json(await fetchGithubFile(owner, repo, path, ref))
+    },
+  )
+
   app.get(
     '/api/admin/users',
     requireAuth,
@@ -268,6 +395,12 @@ async function startServer() {
 
     if (error.status === 400 && error.type === 'entity.parse.failed') {
       response.status(400).json({ error: 'Request body must contain valid JSON.' })
+      return
+    }
+
+    if (error instanceof GithubApiError) {
+      if (error.status >= 500) console.error('GitHub API request failed:', error.message)
+      response.status(error.status).json({ error: error.message })
       return
     }
 

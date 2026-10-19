@@ -21,13 +21,18 @@ const adminItems = [
   { label: "Platform Settings", icon: Settings },
 ];
 
-export default function AppSidebar({ role = "user" }) {
+export default function AppSidebar({
+  role = "user",
+  currentPath = "/",
+  repositories = [],
+  onNavigate = () => {},
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const items = role === "admin" ? adminItems : userItems;
 
   return (
     <aside
-      className={`fixed left-0 top-16 z-30 flex h-[calc(100dvh-4rem)] shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200 ${
+      className={`sticky top-16 z-30 flex h-[calc(100dvh-4rem)] shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200 ${
         collapsed ? "w-17" : "w-60"
       }`}
     >
@@ -67,26 +72,53 @@ export default function AppSidebar({ role = "user" }) {
           {!collapsed && "MENU"}
         </p>
 
-        {items.map(({ label, icon: Icon, active }) => (
-          <Button
-            key={label}
-            variant={active ? "secondary" : "ghost"}
-            className={`w-full ${
-              collapsed
-                ? "justify-center px-0"
-                : "justify-start gap-3 px-3"
-            }`}
-            title={collapsed ? label : undefined}
-            onClick={() => {
-              // Connect navigation items to React Router later.
-            }}
-          >
-            <Icon className="size-4.5 shrink-0" />
-            {!collapsed && (
-              <span className="truncate text-sm">{label}</span>
-            )}
-          </Button>
-        ))}
+        {items.map(({ label, icon: Icon }) => {
+          const active = label === "Repositories"
+            ? currentPath.startsWith("/repositories")
+            : label === "Overview" || label === "Admin Overview"
+              ? currentPath === "/"
+              : false;
+          const target = label === "Repositories" ? "/repositories" : "/";
+
+          return (
+            <div key={label}>
+              <Button
+                variant={active ? "secondary" : "ghost"}
+                className={`w-full ${
+                  collapsed
+                    ? "justify-center px-0"
+                    : "justify-start gap-3 px-3"
+                }`}
+                title={collapsed ? label : undefined}
+                onClick={() => onNavigate(target)}
+              >
+                <Icon className="size-4.5 shrink-0" />
+                {!collapsed && (
+                  <span className="truncate text-sm">{label}</span>
+                )}
+              </Button>
+              {label === "Repositories" && !collapsed && repositories.length > 0 && (
+                <div className="ml-5 mt-1 space-y-1 border-l pl-3">
+                  {repositories.map((repository) => {
+                    const repositoryPath = `/repositories/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`
+                    const selected = currentPath === repositoryPath;
+                    return (
+                      <Button
+                        key={repository.fullName}
+                        variant={selected ? "secondary" : "ghost"}
+                        className="w-full justify-start px-2"
+                        title={repository.fullName}
+                        onClick={() => onNavigate(repositoryPath)}
+                      >
+                        <span className="truncate text-xs">{repository.name}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="space-y-1 border-t p-3">

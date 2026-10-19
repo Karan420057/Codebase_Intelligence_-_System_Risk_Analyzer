@@ -7,6 +7,9 @@ export default function DashboardLayout({
   user,
   onSignOut,
   signingOut = false,
+  currentPath,
+  repositories = [],
+  onNavigate,
   children,
 }) {
   return (
@@ -19,7 +22,12 @@ export default function DashboardLayout({
       />
 
       <div className="flex">
-        <Sider role={role} />
+        <Sider
+          role={role}
+          currentPath={currentPath}
+          repositories={repositories}
+          onNavigate={onNavigate}
+        />
 
         <main className="min-w-0 flex-1">
           {children}
