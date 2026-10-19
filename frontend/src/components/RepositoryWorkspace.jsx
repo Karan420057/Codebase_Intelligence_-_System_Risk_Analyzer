@@ -522,7 +522,7 @@ export default function RepositoryWorkspace({
 
         {activeRepositoryData && (
           <div className={repositoryRoute
-            ? `grid min-h-full items-start ${selectedFile || loadingFile || fileError ? "grid-cols-1 lg:h-full lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : "grid-cols-1"}`
+            ? `grid h-full items-start ${selectedFile || loadingFile || fileError ? "grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : "grid-cols-1"}`
             : "mt-6 grid items-start gap-5 lg:grid-cols-2"}
           >
             <div className={repositoryRoute
