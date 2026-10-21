@@ -1,3 +1,7 @@
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || ''
+).replace(/\/$/, '');
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message)
@@ -7,14 +11,18 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest(path, options = {}) {
-  const response = await fetch(path, {
-    credentials: 'same-origin',
+  const headers = {
+    ...(options.body && !(options.body instanceof FormData)
+      ? { 'Content-Type': 'application/json' }
+      : {}),
+    ...options.headers,
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...options.headers,
-    },
-  })
+    credentials: 'include',
+    headers,
+  });
 
   let payload
   try {

@@ -1,24 +1,25 @@
-import { Activity, Bot, Boxes, ChevronLeft, ChevronRight, CircleHelp, Code2, FileSearch, FolderGit2, LayoutDashboard, Settings, ShieldCheck, Users } from "lucide-react";
+import { Bot, Activity, Boxes, ChevronLeft, ChevronRight, CircleHelp, Code2, FileSearch, FolderGit2, LayoutDashboard, Settings, ShieldCheck, Users, } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "../../lib/i18n.jsx";
 
 const userItems = [
-  { label: "Overview", icon: LayoutDashboard, active: true },
-  { label: "Repositories", icon: FolderGit2 },
-  { label: "Code Analysis", icon: Code2 },
-  { label: "Risk Reports", icon: Activity },
-  { label: "Code Search", icon: FileSearch },
-  { label: "AI Assistant", icon: Bot },
+  { key: "overview", icon: LayoutDashboard, target: "/" },
+  { key: "repositories", icon: FolderGit2, target: "/repositories" },
+  { key: "codeAnalysis", icon: Code2, target: "/" },
+  { key: "riskReports", icon: Activity, target: "/" },
+  { key: "codeSearch", icon: FileSearch, target: "/" },
+  { key: "aiAssistant", icon: Bot, target: "/" },
 ];
 
 const adminItems = [
-  { label: "Admin Overview", icon: LayoutDashboard, active: true },
-  { label: "User Management", icon: Users },
-  { label: "Repositories", icon: FolderGit2 },
-  { label: "Analysis Jobs", icon: Activity },
-  { label: "System Monitoring", icon: Boxes },
-  { label: "Platform Settings", icon: Settings },
+  { key: "adminOverview", icon: LayoutDashboard, target: "/" },
+  { key: "userManagement", icon: Users, target: "/" },
+  { key: "repositories", icon: FolderGit2, target: "/repositories" },
+  { key: "analysisJobs", icon: Activity, target: "/" },
+  { key: "systemMonitoring", icon: Boxes, target: "/" },
+  { key: "platformSettings", icon: Settings, target: "/settings" },
 ];
 
 export default function AppSidebar({
@@ -28,6 +29,7 @@ export default function AppSidebar({
   onNavigate = () => {},
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { t } = useLanguage();
   const items = role === "admin" ? adminItems : userItems;
 
   return (
@@ -40,12 +42,12 @@ export default function AppSidebar({
         {!collapsed && (
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Workspace
+              {t("workspace")}
             </p>
             <p className="mt-1 truncate text-sm font-medium">
               {role === "admin"
-                ? "Administration"
-                : "Codebase Intelligence"}
+                ? t("administration")
+                : t("codebaseIntelligence")}
             </p>
           </div>
         )}
@@ -54,8 +56,10 @@ export default function AppSidebar({
           variant="ghost"
           size="icon"
           className="size-8 shrink-0"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          onClick={() => setCollapsed(!collapsed)}
+          aria-label={
+            collapsed ? t("expandSidebar") : t("collapseSidebar")
+          }
+          onClick={() => setCollapsed((value) => !value)}
         >
           {collapsed ? (
             <ChevronRight className="size-4" />
@@ -69,19 +73,21 @@ export default function AppSidebar({
 
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         <p className="mb-3 px-2 text-xs font-medium text-muted-foreground">
-          {!collapsed && "MENU"}
+          {!collapsed && t("menu")}
         </p>
 
-        {items.map(({ label, icon: Icon }) => {
-          const active = label === "Repositories"
-            ? currentPath.startsWith("/repositories")
-            : label === "Overview" || label === "Admin Overview"
-              ? currentPath === "/"
-              : false;
-          const target = label === "Repositories" ? "/repositories" : "/";
+        {items.map(({ key, icon: Icon, target }) => {
+          const label = t(key);
+
+          const active =
+            key === "repositories"
+              ? currentPath.startsWith("/repositories")
+              : key === "platformSettings"
+                ? currentPath === "/settings"
+                : target === "/" && currentPath === "/";
 
           return (
-            <div key={label}>
+            <div key={key}>
               <Button
                 variant={active ? "secondary" : "ghost"}
                 className={`w-full ${
@@ -97,25 +103,33 @@ export default function AppSidebar({
                   <span className="truncate text-sm">{label}</span>
                 )}
               </Button>
-              {label === "Repositories" && !collapsed && repositories.length > 0 && (
-                <div className="ml-5 mt-1 space-y-1 border-l pl-3">
-                  {repositories.map((repository) => {
-                    const repositoryPath = `/repositories/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`
-                    const selected = currentPath === repositoryPath;
-                    return (
-                      <Button
-                        key={repository.fullName}
-                        variant={selected ? "secondary" : "ghost"}
-                        className="w-full justify-start px-2"
-                        title={repository.fullName}
-                        onClick={() => onNavigate(repositoryPath)}
-                      >
-                        <span className="truncate text-xs">{repository.name}</span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
+
+              {key === "repositories" &&
+                !collapsed &&
+                repositories.length > 0 && (
+                  <div className="ml-5 mt-1 space-y-1 border-l pl-3">
+                    {repositories.map((repository) => {
+                      const repositoryPath =
+                        `/repositories/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`;
+
+                      const selected = currentPath === repositoryPath;
+
+                      return (
+                        <Button
+                          key={repository.fullName}
+                          variant={selected ? "secondary" : "ghost"}
+                          className="w-full justify-start px-2"
+                          title={repository.fullName}
+                          onClick={() => onNavigate(repositoryPath)}
+                        >
+                          <span className="truncate text-xs">
+                            {repository.name}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
             </div>
           );
         })}
@@ -129,10 +143,10 @@ export default function AppSidebar({
               ? "justify-center px-0"
               : "justify-start px-3"
           }`}
-          title={collapsed ? "Help & Support" : undefined}
+          title={collapsed ? t("helpSupport") : undefined}
         >
           <CircleHelp className="size-4.5 shrink-0" />
-          {!collapsed && <span>Help & Support</span>}
+          {!collapsed && <span>{t("helpSupport")}</span>}
         </Button>
 
         {role === "admin" && (
@@ -140,7 +154,7 @@ export default function AppSidebar({
             <ShieldCheck className="size-4 shrink-0 text-primary" />
             {!collapsed && (
               <span className="text-xs text-muted-foreground">
-                Administrator mode
+                {t("administratorMode")}
               </span>
             )}
           </div>

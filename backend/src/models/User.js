@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
@@ -24,12 +24,46 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ["user", "admin"],
+      default: "user",
       required: true,
+    },
+    status: {
+      type: String,
+      enum: ["active", "suspended", "terminated"],
+      default: "active",
+      required: true,
+      index: true,
+    },
+    statusReason: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: "",
+    },
+    statusChangedAt: {
+      type: Date,
+      default: null,
+    },
+    statusChangedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    preferences: {
+      language: {
+        type: String,
+        enum: ["en", "hi"],
+        default: "en",
+      },
+      theme: {
+        type: String,
+        enum: ["light", "dark", "system"],
+        default: "system",
+      },
     },
   },
   { timestamps: true },
-)
+);
 
-export default mongoose.model('User', userSchema)
+export default mongoose.model("User", userSchema);

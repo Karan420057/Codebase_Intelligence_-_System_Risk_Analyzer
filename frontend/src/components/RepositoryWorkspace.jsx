@@ -1,21 +1,6 @@
-
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  ArrowLeft,
-  ExternalLink,
-  FileArchive,
-  FileCode2,
-  FolderGit2,
-  GitCommitHorizontal,
-  GitFork,
-  LoaderCircle,
-  Search,
-  ShieldCheck,
-  Upload,
-  X,
-} from "lucide-react";
-
+import { ArrowRight, ArrowLeft, ExternalLink, FileArchive, FileCode2, FolderGit2, GitCommitHorizontal, GitFork, LoaderCircle, Search, ShieldCheck, Upload, X, } from "lucide-react";
+import { useLanguage } from "../lib/i18n.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +28,7 @@ export default function RepositoryWorkspace({
   onRepositoryFetched = () => {},
   onNavigate = () => {},
 }) {
+  const { t } = useLanguage();
   const [repoUrl, setRepoUrl] = useState("");
   const [zipFile, setZipFile] = useState(null);
   const [error, setError] = useState("");
@@ -264,40 +250,67 @@ export default function RepositoryWorkspace({
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                Workspace
+                {t("workspace")}
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight">Repositories</h1>
+
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                {t("repositoryTitle")}
+              </h1>
+
               <p className="mt-2 text-sm text-muted-foreground">
-                Repositories you have connected are listed here.
+                {t("repositoryDescription")}
               </p>
             </div>
-            <Button type="button" className="gap-2" onClick={() => onNavigate("/")}>
+
+            <Button
+              type="button"
+              className="gap-2"
+              onClick={() => onNavigate("/")}
+            >
               <GitFork className="size-4" />
-              Connect repository
+              {t("connectRepository")}
             </Button>
           </div>
 
+          
           {repositoriesLoading && (
-            <p className="mt-8 text-sm text-muted-foreground" role="status">
-              Loading your saved repositories...
+            <p
+              className="mt-8 text-sm text-muted-foreground"
+              role="status"
+            >
+              {t("loadingRepositories")}
             </p>
           )}
+
           {repositoriesError && (
-            <p className="mt-8 rounded-lg bg-destructive/10 p-4 text-sm text-destructive" role="alert">
-              Unable to load saved repositories: {repositoriesError}
+            <p
+              className="mt-8 rounded-lg bg-destructive/10 p-4 text-sm text-destructive"
+              role="alert"
+            >
+              {t("unableLoadRepositories")}: {repositoriesError}
             </p>
           )}
+
           {!repositoriesLoading && !repositoriesError && repositories.length === 0 ? (
             <div className="mt-8 rounded-2xl border border-dashed bg-card px-6 py-14 text-center">
               <FolderGit2 className="mx-auto size-10 text-muted-foreground" />
-              <h2 className="mt-4 text-lg font-semibold">No repositories yet</h2>
+              <h2 className="mt-4 text-lg font-semibold">
+                {t("noRepositoriesYet")}
+              </h2>
+
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                Connect a GitHub repository and it will appear here for quick access.
+                {t("connectRepositoryHelp")}
               </p>
-              <Button type="button" className="mt-5 gap-2" onClick={() => onNavigate("/")}>
-                Connect your first repository
+
+              <Button
+                type="button"
+                className="mt-5 gap-2"
+                onClick={() => onNavigate("/")}
+              >
+                {t("connectFirstRepository")}
                 <ArrowRight className="size-4" />
               </Button>
+
             </div>
           ) : repositories.length > 0 && (
             <ul className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -331,28 +344,28 @@ export default function RepositoryWorkspace({
         </div>
       ) : (
       <>
+      
       {!repositoryRoute && (
-      <div className="mx-auto max-w-3xl text-center">
-        <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl border bg-card shadow-sm">
-          <FolderGit2 className="size-7 text-primary" />
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl border bg-card shadow-sm">
+            <FolderGit2 className="size-7 text-primary" />
+          </div>
+
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            {t("softwareIntelligence")}
+          </p>
+
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            {t("understandCodebase")}
+            <span className="block text-muted-foreground">
+              {t("identifyRisks")}
+            </span>
+          </h2>
+
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
+            {t("connectOrUploadHelp")}
+          </p>
         </div>
-
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-          Software Intelligence
-        </p>
-
-        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Understand your codebase.
-          <span className="block text-muted-foreground">
-            Identify software risks.
-          </span>
-        </h2>
-
-        <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-          Connect a GitHub repository or upload your project as a ZIP file
-          to get started with code quality, dependency and risk analysis.
-        </p>
-      </div>
       )}
 
       <div className={repositoryRoute
@@ -361,39 +374,41 @@ export default function RepositoryWorkspace({
       >
         {!repositoryRoute && (
         <>
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
-          <Button
-            type="button"
-            variant={source === "github" ? "secondary" : "ghost"}
-            className="gap-2"
-            onClick={() => {
-              setSource("github");
-              setError("");
-            }}
-          >
-            <GitFork className="size-4" />
-            GitHub Repository
-          </Button>
+        
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+        <Button
+          type="button"
+          variant={source === "github" ? "secondary" : "ghost"}
+          className="gap-2"
+          onClick={() => {
+            setSource("github");
+            setError("");
+          }}
+        >
+          <GitFork className="size-4" />
+          {t("githubRepository")}
+        </Button>
 
-          <Button
-            type="button"
-            variant={source === "zip" ? "secondary" : "ghost"}
-            className="gap-2"
-            onClick={() => {
-              setSource("zip");
-              setError("");
-            }}
-          >
-            <Upload className="size-4" />
-            Upload ZIP
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant={source === "zip" ? "secondary" : "ghost"}
+          className="gap-2"
+          onClick={() => {
+            setSource("zip");
+            setError("");
+          }}
+        >
+          <Upload className="size-4" />
+          {t("uploadZip")}
+        </Button>
+      </div>
 
         {source === "github" ? (
           <form onSubmit={handleRepoSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
+              
               <Label htmlFor="repository-url">
-                GitHub repository URL
+                {t("githubRepositoryUrl")}
               </Label>
 
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -410,25 +425,25 @@ export default function RepositoryWorkspace({
                     required
                   />
                 </div>
-
+                
                 <Button type="submit" className="gap-2" disabled={loadingRepository}>
                   {loadingRepository ? (
                     <>
                       <LoaderCircle className="size-4 animate-spin" />
-                      Fetching repository...
+                      {t("fetchingRepository")}
                     </>
                   ) : (
                     <>
-                      Connect Repository
+                      {t("connectRepository")}
                       <ArrowRight className="size-4" />
                     </>
                   )}
                 </Button>
+
               </div>
 
-              <p className="text-xs leading-5 text-muted-foreground">
-                Public repositories can be analyzed without GitHub sign-in.
-                Private repositories require authorized access.
+              <p className="text-sm text-muted-foreground">
+                {t("publicRepositoryHelp")}
               </p>
             </div>
           </form>
@@ -603,9 +618,9 @@ export default function RepositoryWorkspace({
                   </p>
                 </div>
                 <div className="rounded-lg bg-muted/60 p-3">
-                  <p className="text-muted-foreground">Forks / watchers</p>
+                  <p className="text-muted-foreground">Contributors</p>
                   <p className="mt-1 font-medium">
-                    {activeRepositoryData.repository.forks.toLocaleString()} / {activeRepositoryData.repository.watchers.toLocaleString()}
+                    {activeRepositoryData.repository.contributorCount.toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-lg bg-muted/60 p-3">
@@ -822,18 +837,17 @@ export default function RepositoryWorkspace({
               <ShieldCheck className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
 
               <p className="text-xs leading-5 text-muted-foreground">
-                Repository access should be read-only. Keep access tokens on
-                the backend and never expose private source code or credentials
-                to unauthorized users.
+                {t("repositoryAccessNotice")}
               </p>
             </div>
           </>
         )}
       </div>
 
+      
       {!repositoryRoute && !activeRepositoryData && !loadingRepository && (
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          No repository selected yet. Your analysis workspace will appear here.
+          {t("noRepositorySelected")}
         </p>
       )}
       </>

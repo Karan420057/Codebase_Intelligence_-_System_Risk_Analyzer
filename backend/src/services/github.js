@@ -75,13 +75,37 @@ export async function fetchGithubCommits(owner, repo, page) {
   }
 }
 
+async function fetchGithubContributorCount(owner, repo) {
+  const repositoryPath = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
+  const { payload, headers } = await githubRequest(
+    `${repositoryPath}/contributors?per_page=1&anon=true`,
+  )
+  if (!Array.isArray(payload)) {
+    throw new GithubApiError('GitHub returned an invalid contributors response.', 502)
+  }
+
+  const lastPageLink = headers.get('link')
+    ?.split(',')
+    .find((link) => /;\s*rel="last"/.test(link))
+  const lastPage = lastPageLink?.match(/[?&]page=(\d+)/)
+  if (lastPage) return Number(lastPage[1])
+
+  const hasNextPage = headers.get('link')?.includes('rel="next"')
+  if (hasNextPage) {
+    throw new GithubApiError('GitHub did not return the total contributor count.', 502)
+  }
+
+  return payload.length
+}
+
 export async function fetchGithubRepository(owner, repo) {
   const repositoryPath = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
   const { payload: repository } = await githubRequest(repositoryPath)
   const branchPath = `${repositoryPath}/branches/${encodeURIComponent(repository.default_branch)}`
-  const [{ payload: branch }, { commits, hasMore }] = await Promise.all([
+  const [{ payload: branch }, { commits, hasMore }, contributorCount] = await Promise.all([
     githubRequest(branchPath),
     fetchGithubCommits(owner, repo, 1),
+    fetchGithubContributorCount(owner, repo),
   ])
   const treeSha = branch.commit?.commit?.tree?.sha
   if (!treeSha) {
@@ -110,6 +134,7 @@ export async function fetchGithubRepository(owner, repo) {
       defaultBranch: repository.default_branch,
       language: repository.language,
       stars: repository.stargazers_count,
+      contributorCount,
       watchers: repository.watchers_count,
       forks: repository.forks_count,
       openIssues: repository.open_issues_count,

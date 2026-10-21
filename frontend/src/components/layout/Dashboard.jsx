@@ -1,4 +1,3 @@
-
 import Navbar from "./Navbar";
 import Sider from "./Sider";
 
@@ -19,6 +18,7 @@ export default function DashboardLayout({
         user={user}
         onSignOut={onSignOut}
         signingOut={signingOut}
+        onNavigate={onNavigate}
       />
 
       <div className="flex">

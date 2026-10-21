@@ -5,8 +5,8 @@ export function ThemeProvider({ children }) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="dark"
-      enableSystem={false}
+      defaultTheme="system"
+      enableSystem
       storageKey="codebase-intelligence-theme"
       disableTransitionOnChange
     >

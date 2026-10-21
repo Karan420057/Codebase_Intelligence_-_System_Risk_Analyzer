@@ -48,6 +48,10 @@ const repositorySchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    contributorCount: {
+      type: Number,
+      default: 0,
+    },
     forks: {
       type: Number,
       default: 0,
