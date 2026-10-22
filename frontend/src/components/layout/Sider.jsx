@@ -1,5 +1,5 @@
 import { Bot, Activity, Boxes, ChevronLeft, ChevronRight, CircleHelp, Code2, FileSearch, FolderGit2, LayoutDashboard, Settings, ShieldCheck, Users, } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "../../lib/i18n.jsx";
@@ -29,8 +29,15 @@ export default function AppSidebar({
   onNavigate = () => {},
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [repositoriesExpanded, setRepositoriesExpanded] = useState(false);
   const { t } = useLanguage();
   const items = role === "admin" ? adminItems : userItems;
+
+  useEffect(() => {
+    if (repositories.length === 0) {
+      setRepositoriesExpanded(false);
+    }
+  }, [repositories.length]);
 
   return (
     <aside
@@ -75,7 +82,7 @@ export default function AppSidebar({
         <p className="mb-3 px-2 text-xs font-medium text-muted-foreground">
           {!collapsed && t("menu")}
         </p>
-
+        
         {items.map(({ key, icon: Icon, target }) => {
           const label = t(key);
 
@@ -88,24 +95,60 @@ export default function AppSidebar({
 
           return (
             <div key={key}>
-              <Button
-                variant={active ? "secondary" : "ghost"}
-                className={`w-full ${
-                  collapsed
-                    ? "justify-center px-0"
-                    : "justify-start gap-3 px-3"
-                }`}
-                title={collapsed ? label : undefined}
-                onClick={() => onNavigate(target)}
-              >
-                <Icon className="size-4.5 shrink-0" />
-                {!collapsed && (
-                  <span className="truncate text-sm">{label}</span>
-                )}
-              </Button>
+              <div className="flex w-full items-center gap-1">
+                <Button
+                  variant={active ? "secondary" : "ghost"}
+                  className={`min-w-0 flex-1 ${
+                    collapsed
+                      ? "justify-center px-0"
+                      : "justify-start gap-3 px-3"
+                  }`}
+                  title={collapsed ? label : undefined}
+                  onClick={() => {
+                    if (key === "repositories" && repositories.length > 0) {
+                      setRepositoriesExpanded((value) => !value);
+                      onNavigate("/repositories");
+                    } else {
+                      onNavigate(target);
+                    }
+                  }}
+                >
+                  <Icon className="size-4.5 shrink-0" />
+                  {!collapsed && (
+                    <span className="truncate text-sm">{label}</span>
+                  )}
+                </Button>
+
+                {key === "repositories" &&
+                  repositories.length > 0 &&
+                  !collapsed && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 shrink-0"
+                      aria-label={
+                        repositoriesExpanded
+                          ? "Hide repositories"
+                          : "Show repositories"
+                      }
+                      aria-expanded={repositoriesExpanded}
+                      onClick={() =>
+                        setRepositoriesExpanded((value) => !value)
+                      }
+                    >
+                      {repositoriesExpanded ? (
+                        <ChevronLeft className="size-4 -rotate-90" />
+                      ) : (
+                        <ChevronRight className="size-4 rotate-90" />
+                      )}
+                    </Button>
+                  )}
+              </div>
 
               {key === "repositories" &&
                 !collapsed &&
+                repositoriesExpanded &&
                 repositories.length > 0 && (
                   <div className="ml-5 mt-1 space-y-1 border-l pl-3">
                     {repositories.map((repository) => {

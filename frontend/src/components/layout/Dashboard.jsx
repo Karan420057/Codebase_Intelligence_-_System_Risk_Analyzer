@@ -8,6 +8,8 @@ export default function DashboardLayout({
   signingOut = false,
   currentPath,
   repositories = [],
+  repositoryJustAdded = false,
+  onRepositoryDropdownOpened = () => {},
   onNavigate,
   children,
 }) {
@@ -26,6 +28,8 @@ export default function DashboardLayout({
           role={role}
           currentPath={currentPath}
           repositories={repositories}
+          repositoryJustAdded={repositoryJustAdded}
+          onRepositoryDropdownOpened={onRepositoryDropdownOpened}
           onNavigate={onNavigate}
         />
 

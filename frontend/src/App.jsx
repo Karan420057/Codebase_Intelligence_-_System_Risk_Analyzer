@@ -21,6 +21,7 @@ function App() {
     repositories: [],
     error: '',
   })
+  const [repositoryJustAdded, setRepositoryJustAdded] = useState(false);
 
   useEffect(() => {
     function handlePopState() {
@@ -74,18 +75,38 @@ function App() {
 
   const currentUserId = user?.id
   const rememberRepository = useCallback((repository) => {
-    if (!currentUserId) return
-    setRepositoryState((current) => ({
-      userId: currentUserId,
-      repositories: [
-        repository,
-        ...(current.userId === currentUserId
-          ? current.repositories.filter((item) => item.fullName.toLowerCase() !== repository.fullName.toLowerCase())
-          : []),
-      ],
-      error: '',
-    }))
-  }, [currentUserId])
+    if (!currentUserId) return;
+
+    setRepositoryState((current) => {
+      const previousRepositories =
+        current.userId === currentUserId
+          ? current.repositories
+          : [];
+
+      const alreadyExists = previousRepositories.some(
+        (item) =>
+          item.fullName.toLowerCase() ===
+          repository.fullName.toLowerCase(),
+      );
+
+      if (!alreadyExists) {
+        setRepositoryJustAdded(true);
+      }
+
+      return {
+        userId: currentUserId,
+        repositories: [
+          repository,
+          ...previousRepositories.filter(
+            (item) =>
+              item.fullName.toLowerCase() !==
+              repository.fullName.toLowerCase(),
+          ),
+        ],
+        error: '',
+      };
+    });
+  }, [currentUserId]);
 
   const repositories = repositoryState.userId === user?.id
     ? repositoryState.repositories
