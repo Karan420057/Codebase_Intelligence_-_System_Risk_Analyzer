@@ -1,4 +1,18 @@
 const githubApiUrl = 'https://api.github.com'
+const githubRawUrl = 'https://raw.githubusercontent.com'
+const sourceExtensions = new Set([
+  '.c', '.cc', '.clj', '.cpp', '.cs', '.css', '.cxx', '.dart', '.elm', '.ex',
+  '.exs', '.go', '.graphql', '.h', '.hpp', '.hrl', '.hs', '.html', '.java',
+  '.jl', '.js', '.jsx', '.kt', '.lua', '.m', '.mdx', '.mm', '.php', '.pl',
+  '.pm', '.py', '.r', '.rb', '.rs', '.scala', '.sc', '.sh', '.sql', '.svelte',
+  '.swift', '.tf', '.ts', '.tsx', '.vue',
+])
+const generatedDirectories = new Set([
+  '.angular', '.git', '.next', '.nuxt', '.svelte-kit', '.venv', '__pycache__',
+  'bin', 'build', 'coverage', 'dist', 'node_modules', 'obj', 'out', 'target',
+  'vendor', 'venv',
+])
+const lineCountConcurrency = 8
 
 export class GithubApiError extends Error {
   constructor(message, status) {
@@ -13,6 +27,70 @@ export function isGithubName(value) {
     && value !== '.'
     && value !== '..'
     && /^[\w.-]+$/.test(value)
+}
+
+function isSourceFile(path) {
+  const segments = path.toLowerCase().split('/')
+  const filename = segments.at(-1)
+  const extension = filename.slice(filename.lastIndexOf('.'))
+
+  return !segments.some((segment) => generatedDirectories.has(segment))
+    && !filename.includes('.min.')
+    && !filename.includes('.generated.')
+    && sourceExtensions.has(extension)
+}
+
+function countPhysicalLines(content) {
+  if (!content) return 0
+
+  const lineBreaks = content.match(/\r\n|\n|\r/g)?.length || 0
+  const endsWithLineBreak = /(?:\r\n|\n|\r)$/.test(content)
+  return lineBreaks + (endsWithLineBreak ? 0 : 1)
+}
+
+async function fetchGithubSourceLineCount(owner, repo, ref, files) {
+  const sourceFiles = files.filter((file) => isSourceFile(file.path))
+  let nextFileIndex = 0
+  let lineCount = 0
+  let lineCountError = null
+
+  async function countNextFiles() {
+    while (nextFileIndex < sourceFiles.length && !lineCountError) {
+      const file = sourceFiles[nextFileIndex]
+      nextFileIndex += 1
+      const encodedPath = file.path.split('/').map(encodeURIComponent).join('/')
+
+      try {
+        const response = await fetch(
+          `${githubRawUrl}/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodeURIComponent(ref)}/${encodedPath}`,
+          {
+            headers: {
+              'User-Agent': 'Codebase-Intelligence',
+              ...(process.env.GITHUB_TOKEN?.trim()
+                ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN.trim()}` }
+                : {}),
+            },
+            signal: AbortSignal.timeout(15000),
+          },
+        )
+        if (!response.ok) {
+          throw new GithubApiError('Unable to calculate source LOC for the repository.', 502)
+        }
+
+        const content = await response.text()
+        lineCount += countPhysicalLines(content)
+      } catch (error) {
+        lineCountError = error instanceof GithubApiError
+          ? error
+          : new GithubApiError('Unable to calculate source LOC for the repository.', 502)
+      }
+    }
+  }
+
+  const workerCount = Math.min(lineCountConcurrency, sourceFiles.length)
+  await Promise.all(Array.from({ length: workerCount }, () => countNextFiles()))
+  if (lineCountError) throw lineCountError
+  return lineCount
 }
 
 async function githubRequest(path) {
@@ -115,6 +193,27 @@ export async function fetchGithubRepository(owner, repo) {
   const { payload: tree } = await githubRequest(
     `${repositoryPath}/git/trees/${encodeURIComponent(treeSha)}?recursive=1`,
   )
+  const files = (tree.tree || [])
+    .filter((item) => item.type === 'blob')
+    .map((item) => ({
+      path: item.path,
+      sha: item.sha,
+      size: item.size,
+    }))
+
+  let loc = null
+  let locError = null
+  if (tree.truncated) {
+    locError = 'GitHub shortened the repository file tree, so source LOC cannot be calculated.'
+  } else {
+    try {
+      loc = await fetchGithubSourceLineCount(owner, repo, branch.commit.sha, files)
+    } catch (error) {
+      locError = error instanceof Error
+        ? error.message
+        : 'Unable to calculate source LOC for the repository.'
+    }
+  }
 
   return {
     repository: {
@@ -147,14 +246,10 @@ export async function fetchGithubRepository(owner, repo) {
         : null,
       topics: repository.topics || [],
     },
-    files: (tree.tree || [])
-      .filter((item) => item.type === 'blob')
-      .map((item) => ({
-        path: item.path,
-        sha: item.sha,
-        size: item.size,
-      })),
+    files,
     filesTruncated: tree.truncated || false,
+    loc,
+    locError,
     commits,
     hasMoreCommits: hasMore,
   }

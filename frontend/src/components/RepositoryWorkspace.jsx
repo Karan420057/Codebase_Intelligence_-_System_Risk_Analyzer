@@ -19,6 +19,18 @@ function formatDate(value) {
   }).format(date);
 }
 
+function getPhysicalLines(content) {
+  if (!content) return [];
+
+  const lines = content.split(/\r\n|\n|\r/);
+  if (/(?:\r\n|\n|\r)$/.test(content)) lines.pop();
+  return lines;
+}
+
+function countPhysicalLines(content) {
+  return getPhysicalLines(content).length;
+}
+
 export default function RepositoryWorkspace({
   repositoryRoute = null,
   showRepositoryList = false,
@@ -44,6 +56,7 @@ export default function RepositoryWorkspace({
   const [commitError, setCommitError] = useState("");
 
   const fileInputRef = useRef(null);
+  const fileRequestIdRef = useRef(0);
   const routeOwner = repositoryRoute?.owner;
   const routeRepo = repositoryRoute?.repo;
 
@@ -155,6 +168,8 @@ export default function RepositoryWorkspace({
   }
 
   async function handleFileSelect(file) {
+    const requestId = fileRequestIdRef.current + 1;
+    fileRequestIdRef.current = requestId;
     setSelectedFile(null);
     setFileError("");
     setLoadingFile(true);
@@ -168,12 +183,25 @@ export default function RepositoryWorkspace({
       const result = await apiRequest(
         `/api/github/${encodeURIComponent(activeRepositoryData.repository.owner.login)}/${encodeURIComponent(activeRepositoryData.repository.name)}/file?${query}`
       );
-      setSelectedFile(result);
+      if (fileRequestIdRef.current === requestId) {
+        setSelectedFile(result);
+      }
     } catch (requestError) {
-      setFileError(requestError.message || "Unable to fetch this file.");
+      if (fileRequestIdRef.current === requestId) {
+        setFileError(requestError.message || "Unable to fetch this file.");
+      }
     } finally {
-      setLoadingFile(false);
+      if (fileRequestIdRef.current === requestId) {
+        setLoadingFile(false);
+      }
     }
+  }
+
+  function handleCloseFilePreview() {
+    fileRequestIdRef.current += 1;
+    setSelectedFile(null);
+    setLoadingFile(false);
+    setFileError("");
   }
 
   async function handleLoadMoreCommits() {
@@ -611,10 +639,12 @@ export default function RepositoryWorkspace({
                   <p className="text-muted-foreground">Language</p>
                   <p className="mt-1 truncate font-medium">{activeRepositoryData.repository.language || "Not specified"}</p>
                 </div>
-                <div className="rounded-lg bg-muted/60 p-3">
-                  <p className="text-muted-foreground">Stars</p>
+                <div className="rounded-lg bg-muted/60 p-3" title={t("locScope")}>
+                  <p className="text-muted-foreground">{t("loc")}</p>
                   <p className="mt-1 font-medium">
-                    {activeRepositoryData.repository.stars.toLocaleString()}
+                    {activeRepositoryData.loc === null || activeRepositoryData.loc === undefined
+                      ? t("locUnavailable")
+                      : activeRepositoryData.loc.toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-lg bg-muted/60 p-3">
@@ -636,6 +666,11 @@ export default function RepositoryWorkspace({
                   </p>
                 </div>
               </div>
+              {activeRepositoryData.locError && (
+                <p className="mt-2 text-xs text-muted-foreground" role="status">
+                  {activeRepositoryData.locError}
+                </p>
+              )}
 
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
                 <span>{activeRepositoryData.repository.private ? "Private" : "Public"}</span>
@@ -783,9 +818,26 @@ export default function RepositoryWorkspace({
                   />
                 )}
                 <div className="flex min-h-12 items-center justify-between gap-3 border-b px-4 py-3">
-                  <h3 className="truncate text-sm font-medium">
-                    {selectedFile?.path || "File preview"}
-                  </h3>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("close")}
+                      title={t("close")}
+                      onClick={handleCloseFilePreview}
+                    >
+                      <X />
+                    </Button>
+                    <h3 className="min-w-0 truncate text-sm font-medium">
+                      {selectedFile?.path || "File preview"}
+                    </h3>
+                    {selectedFile && !selectedFile.isBinary && (
+                      <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                        {t("loc")}: {countPhysicalLines(selectedFile.content).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                   {selectedFile && (
                     <a
                       href={selectedFile.url}
@@ -813,7 +865,14 @@ export default function RepositoryWorkspace({
                   <pre className={repositoryRoute
                     ? "max-h-[60dvh] overflow-auto p-4 text-xs leading-5 lg:h-[calc(100%-3rem)] lg:max-h-none"
                     : "max-h-96 overflow-auto p-4 text-xs leading-5"}
-                  ><code>{selectedFile.content}</code></pre>
+                  ><code className="block min-w-max">{getPhysicalLines(selectedFile.content).map((line, index) => (
+                    <span className="grid grid-cols-[3rem_1fr]" key={index}>
+                      <span aria-hidden="true" className="select-none pr-4 text-right text-muted-foreground/60">
+                        {index + 1}
+                      </span>
+                      <span>{line || " "}</span>
+                    </span>
+                  ))}</code></pre>
                 ) : null}
               </section>
             )}
