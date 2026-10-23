@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/api";
+import RepositoryLoading from "./repository/RepositoryLoading";
 
 function formatDate(value) {
   if (!value) return "Unknown date";
@@ -57,7 +58,11 @@ export default function RepositoryWorkspace({
   const [error, setError] = useState("");
   const [source, setSource] = useState("github");
   const [repositoryData, setRepositoryData] = useState(null);
+
   const [loadingRepository, setLoadingRepository] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState(0);
+
+
   const [fileSearch, setFileSearch] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [loadingFile, setLoadingFile] = useState(false);
@@ -70,48 +75,80 @@ export default function RepositoryWorkspace({
   const fileRequestIdRef = useRef(0);
   const routeOwner = repositoryRoute?.owner;
   const routeRepo = repositoryRoute?.repo;
-
+  
   useEffect(() => {
-    if (!routeOwner || !routeRepo) return undefined;
+    if (!routeOwner || !routeRepo) {
+      setLoadingRepository(false);
+      return undefined;
+    }
 
     const currentRepository = repositoryData?.repository;
+
     if (
-      currentRepository?.owner.login.toLowerCase() === routeOwner.toLowerCase()
-      && currentRepository?.name.toLowerCase() === routeRepo.toLowerCase()
+      currentRepository?.owner.login.toLowerCase() === routeOwner.toLowerCase() &&
+      currentRepository?.name.toLowerCase() === routeRepo.toLowerCase()
     ) {
+      setLoadingRepository(false);
       return undefined;
     }
 
     let active = true;
-    apiRequest(
-      `/api/github/${encodeURIComponent(routeOwner)}/${encodeURIComponent(routeRepo)}`
-    )
-      .then((result) => {
+
+    setError("");
+    setLoadingRepository(true);
+    setCompletedSteps(1);
+    setRepositoryData(null);
+    setSelectedFile(null);
+    setFileError("");
+    setFileSearch("");
+    setCommitPage(1);
+    setCommitError("");
+
+    async function loadRepository() {
+      try {
+        const result = await apiRequest(
+          `/api/github/${encodeURIComponent(routeOwner)}/${encodeURIComponent(routeRepo)}`
+        );
+
         if (!active) return;
+
+        setCompletedSteps(2);
+
+        // Repository data has arrived; prepare the workspace.
         setRepositoryData(result);
         setSelectedFile(null);
         setFileError("");
         setFileSearch("");
         setCommitPage(1);
         setCommitError("");
+
         onRepositoryFetched({
           owner: result.repository.owner.login,
           name: result.repository.name,
           fullName: result.repository.fullName,
           url: result.repository.url,
         });
-      })
-      .catch((requestError) => {
-        if (active) setError(requestError.message || "Unable to fetch this GitHub repository.");
-      })
-      .finally(() => {
-        if (active) setLoadingRepository(false);
-      });
+
+        setCompletedSteps(3);
+      } catch (requestError) {
+        if (active) {
+          setError(
+            requestError.message || "Unable to fetch this GitHub repository."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoadingRepository(false);
+        }
+      }
+    }
+
+    loadRepository();
 
     return () => {
       active = false;
     };
-  }, [routeOwner, routeRepo, repositoryData, onRepositoryFetched]);
+  }, [routeOwner, routeRepo]);
 
   async function handleRepoSubmit(event) {
     event.preventDefault();
@@ -153,6 +190,7 @@ export default function RepositoryWorkspace({
     }
 
     setLoadingRepository(true);
+    setCompletedSteps(1);
     setRepositoryData(null);
     setSelectedFile(null);
     setFileError("");
@@ -160,9 +198,14 @@ export default function RepositoryWorkspace({
     setCommitPage(1);
     setCommitError("");
     try {
+
       const result = await apiRequest(
         `/api/github/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
       );
+
+      setRepositoryData(result);
+      setCompletedSteps(3);
+
       setRepositoryData(result);
       onRepositoryFetched({
         owner: result.repository.owner.login,
@@ -567,13 +610,12 @@ export default function RepositoryWorkspace({
         </>
         )}
 
-        {(loadingRepository || (repositoryRoute && !activeRepositoryData && !error)) && (
-          <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground" role="status">
-            <LoaderCircle className="size-4 animate-spin" />
-            {repositoryRoute
-              ? "Loading repository details, files, and commits..."
-              : "Fetching repository details, files, and recent commits..."}
-          </p>
+        {(loadingRepository ||
+          (repositoryRoute && !activeRepositoryData && !error)) && (
+          <RepositoryLoading
+            variant={repositoryRoute ? "repository" : "connecting"}
+            completedSteps={completedSteps}
+          />
         )}
 
         {activeRepositoryData && (

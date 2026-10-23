@@ -149,16 +149,18 @@ function App() {
   }
 
   async function handleSignOut() {
-    if (signingOut) return
+    if (signingOut) return;
+
+    setSigningOut(true);
+    setSignOutError('');
 
     try {
-      setSigningOut(true)
-      setSignOutError('')
-      await signOut()
-      window.history.replaceState(null, '', '/login')
+      await signOut();
+      window.history.replaceState(null, '', '/login');
     } catch (requestError) {
-      setSignOutError(requestError.message)
-      setSigningOut(false)
+      setSignOutError(requestError.message || 'Unable to sign out. Please try again.');
+    } finally {
+      setSigningOut(false);
     }
   }
 
