@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowLeft, ExternalLink, FileArchive, FileCode2, FolderGit2, GitCommitHorizontal, GitFork, LoaderCircle, Search, ShieldCheck, Upload, X, } from "lucide-react";
+import { ArrowRight, ArrowLeft, Code2, ExternalLink, FileArchive, FileCode2, FolderGit2, GitCommitHorizontal, GitFork, LoaderCircle, Search, ShieldCheck, Upload, Users, X, } from "lucide-react";
 import { useLanguage } from "../lib/i18n.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,17 @@ function getPhysicalLines(content) {
 function countPhysicalLines(content) {
   return getPhysicalLines(content).length;
 }
+
+const languageBarColors = [
+  "bg-sky-500",
+  "bg-emerald-500",
+  "bg-amber-500",
+  "bg-violet-500",
+  "bg-rose-500",
+  "bg-cyan-500",
+  "bg-orange-500",
+  "bg-indigo-500",
+];
 
 export default function RepositoryWorkspace({
   repositoryRoute = null,
@@ -235,6 +246,8 @@ export default function RepositoryWorkspace({
   const matchingFiles = activeRepositoryData?.files.filter((file) =>
     file.path.toLowerCase().includes(fileSearch.trim().toLowerCase())
   ) ?? [];
+  const languages = activeRepositoryData?.languages ?? [];
+  const totalLanguageBytes = languages.reduce((total, language) => total + language.bytes, 0);
 
   function handleFileChange(event) {
     const file = event.target.files?.[0];
@@ -397,7 +410,7 @@ export default function RepositoryWorkspace({
       )}
 
       <div className={repositoryRoute
-        ? "h-full w-full overflow-y-auto bg-background lg:overflow-hidden"
+        ? "h-full w-full overflow-y-auto bg-background lg:overflow-y-auto"
         : "mx-auto mt-10 max-w-2xl rounded-2xl border bg-card p-4 shadow-sm sm:p-6"}
       >
         {!repositoryRoute && (
@@ -565,12 +578,14 @@ export default function RepositoryWorkspace({
 
         {activeRepositoryData && (
           <div className={repositoryRoute
-            ? `grid h-full items-start ${selectedFile || loadingFile || fileError ? "grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : "grid-cols-1"}`
+            ? `grid h-full min-h-0 items-start gap-5 grid-cols-1 ${selectedFile || loadingFile || fileError
+              ? "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[minmax(0,5fr)_minmax(15rem,3fr)_minmax(0,7fr)]"
+              : "lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)] lg:grid-rows-[auto_minmax(0,1fr)]"}`
             : "mt-6 grid items-start gap-5 lg:grid-cols-2"}
           >
             <div className={repositoryRoute
-              ? "min-w-0 px-4 py-5 sm:px-6 lg:h-full lg:overflow-y-auto"
-              : "min-w-0 space-y-5"}
+              ? `min-w-0 px-4 py-5 sm:px-6 ${selectedFile || loadingFile || fileError ? "lg:col-span-2 xl:col-span-3" : "lg:col-span-2"}`
+              : "min-w-0 space-y-5 lg:row-start-1 lg:col-start-1"}
             >
               {repositoryRoute && (
                 <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -630,15 +645,15 @@ export default function RepositoryWorkspace({
                 </a>
               )}
 
-              <div className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
+              <div className={`mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 ${repositoryRoute ? "lg:grid-cols-4" : "lg:grid-cols-6"}`}>
                 <div className="rounded-lg bg-muted/60 p-3">
                   <p className="text-muted-foreground">Default branch</p>
                   <p className="mt-1 truncate font-medium">{activeRepositoryData.repository.defaultBranch}</p>
                 </div>
-                <div className="rounded-lg bg-muted/60 p-3">
+                {!repositoryRoute && <div className="rounded-lg bg-muted/60 p-3">
                   <p className="text-muted-foreground">Language</p>
                   <p className="mt-1 truncate font-medium">{activeRepositoryData.repository.language || "Not specified"}</p>
-                </div>
+                </div>}
                 <div className="rounded-lg bg-muted/60 p-3" title={t("locScope")}>
                   <p className="text-muted-foreground">{t("loc")}</p>
                   <p className="mt-1 font-medium">
@@ -647,12 +662,12 @@ export default function RepositoryWorkspace({
                       : activeRepositoryData.loc.toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-lg bg-muted/60 p-3">
+                {!repositoryRoute && <div className="rounded-lg bg-muted/60 p-3">
                   <p className="text-muted-foreground">Contributors</p>
                   <p className="mt-1 font-medium">
                     {activeRepositoryData.repository.contributorCount.toLocaleString()}
                   </p>
-                </div>
+                </div>}
                 <div className="rounded-lg bg-muted/60 p-3">
                   <p className="text-muted-foreground">Files / issues</p>
                   <p className="mt-1 font-medium">
@@ -686,7 +701,12 @@ export default function RepositoryWorkspace({
                 ))}
               </div>
             </section>
+            </div>
 
+            <div className={repositoryRoute
+              ? `min-w-0 space-y-5 px-4 pb-5 sm:px-6 lg:row-start-2 lg:col-start-1 lg:min-h-0 lg:overflow-y-auto ${selectedFile || loadingFile || fileError ? "xl:col-start-1" : ""}`
+              : "min-w-0 space-y-5 lg:row-start-2 lg:col-start-1"}
+            >
             <section className="min-w-0 rounded-xl border bg-background">
                 <div className="border-b px-4 py-3">
                   <div className="flex items-center gap-2 font-medium">
@@ -740,7 +760,7 @@ export default function RepositoryWorkspace({
                 )}
             </section>
 
-            <section className="rounded-xl border bg-background">
+            <section className="min-w-0 rounded-xl border bg-background">
               <div className="flex items-center gap-2 border-b px-4 py-3 font-medium">
                 <GitCommitHorizontal className="size-4 text-primary" />
                 Commit history
@@ -806,10 +826,130 @@ export default function RepositoryWorkspace({
             </section>
             </div>
 
+            {repositoryRoute && (
+              <aside className={`min-w-0 space-y-5 px-4 pb-5 sm:px-6 lg:row-start-2 lg:min-h-0 lg:overflow-y-auto ${selectedFile || loadingFile || fileError
+                ? "lg:row-start-3 lg:col-start-1 xl:row-start-2 xl:col-start-2"
+                : "lg:col-start-2"}`}
+              >
+                <section className="rounded-xl border bg-background">
+                  <div className="flex items-center gap-2 border-b px-4 py-3 font-medium">
+                    <Code2 className="size-4 text-primary" />
+                    {t("languages")}
+                  </div>
+                  {languages.length === 0 ? (
+                    <p className="px-4 py-5 text-sm text-muted-foreground">{t("noLanguages")}</p>
+                  ) : (
+                    <ul className="space-y-4 p-4">
+                      {languages
+                        .slice()
+                        .sort((first, second) => second.bytes - first.bytes)
+                        .map((language, index) => {
+                          const percentage = totalLanguageBytes > 0
+                            ? (language.bytes / totalLanguageBytes) * 100
+                            : 0;
+
+                          return (
+                            <li key={language.name}>
+                              <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                                <span className="truncate font-medium">{language.name}</span>
+                                <span className="shrink-0 text-xs text-muted-foreground">
+                                  {percentage.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div
+                                role="progressbar"
+                                aria-label={`${language.name}: ${percentage.toFixed(1)}%`}
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow={Number(percentage.toFixed(1))}
+                                className="h-2 overflow-hidden rounded-full bg-muted"
+                              >
+                                <div
+                                  className={`h-full rounded-full transition-[width] ${languageBarColors[index % languageBarColors.length]}`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                  )}
+                </section>
+
+                <section className="rounded-xl border bg-background">
+                  <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+                    <h2 className="flex items-center gap-2 font-medium">
+                      <Users className="size-4 text-primary" />
+                      {t("contributors")}
+                    </h2>
+                    <span className="text-xs text-muted-foreground">
+                      {activeRepositoryData.repository.contributorCount.toLocaleString()}
+                    </span>
+                  </div>
+                  {activeRepositoryData.contributors.length === 0 ? (
+                    <p className="px-4 py-5 text-sm text-muted-foreground">{t("noContributors")}</p>
+                  ) : (
+                    <>
+                      <ul className="divide-y">
+                        {activeRepositoryData.contributors.map((contributor, index) => {
+                          const contributorContent = (
+                            <>
+                              {contributor.avatarUrl ? (
+                                <img src={contributor.avatarUrl} alt="" className="size-9 shrink-0 rounded-full" />
+                              ) : (
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                                  {(contributor.name || "?").slice(0, 1).toUpperCase()}
+                                </span>
+                              )}
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-medium">
+                                  {contributor.name}
+                                </span>
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
+                                  {contributor.contributions.toLocaleString()} {t("contributions")}
+                                </span>
+                              </span>
+                              {contributor.url && <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />}
+                            </>
+                          );
+
+                          return (
+                            <li key={contributor.login || `${contributor.name}-${index}`}>
+                              {contributor.url ? (
+                                <a
+                                  href={contributor.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40"
+                                >
+                                  {contributorContent}
+                                </a>
+                              ) : (
+                                <div className="flex items-center gap-3 px-4 py-3">
+                                  {contributorContent}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {activeRepositoryData.repository.contributorCount > activeRepositoryData.contributors.length && (
+                        <p className="border-t px-4 py-3 text-xs text-muted-foreground">
+                          {t("showingTopContributors")
+                            .replace("{shown}", activeRepositoryData.contributors.length.toLocaleString())
+                            .replace("{total}", activeRepositoryData.repository.contributorCount.toLocaleString())}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </section>
+              </aside>
+            )}
+
             {(selectedFile || loadingFile || fileError) && (
               <section className={`relative min-w-0 overflow-hidden border bg-background ${repositoryRoute
-                ? "min-h-[60dvh] border-t lg:h-full lg:min-h-0 lg:border-l lg:border-t-0"
-                : "rounded-xl"}
+                ? "min-h-[60dvh] border-t lg:row-start-2 lg:col-start-2 lg:h-full lg:min-h-0 lg:border-l lg:border-t-0 xl:col-start-3"
+                : "rounded-xl lg:row-start-1 lg:col-start-2"}
               `}>
                 {repositoryRoute && (
                   <span

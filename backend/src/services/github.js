@@ -176,14 +176,54 @@ async function fetchGithubContributorCount(owner, repo) {
   return payload.length
 }
 
+async function fetchGithubContributors(owner, repo) {
+  const { payload } = await githubRequest(
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors?per_page=10&anon=true`,
+  )
+  if (!Array.isArray(payload)) {
+    throw new GithubApiError('GitHub returned an invalid contributors response.', 502)
+  }
+
+  const contributors = payload.map((contributor) => ({
+    login: typeof contributor.login === 'string' ? contributor.login : null,
+    name: contributor.login || contributor.name || 'Anonymous contributor',
+    avatarUrl: typeof contributor.avatar_url === 'string' ? contributor.avatar_url : null,
+    contributions: contributor.contributions,
+    url: typeof contributor.html_url === 'string' ? contributor.html_url : null,
+  }))
+
+  return contributors
+}
+
+async function fetchGithubLanguages(owner, repo) {
+  const { payload } = await githubRequest(
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/languages`,
+  )
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new GithubApiError('GitHub returned an invalid languages response.', 502)
+  }
+
+  return Object.entries(payload)
+    .filter(([, bytes]) => Number.isFinite(bytes) && bytes > 0)
+    .map(([name, bytes]) => ({ name, bytes }))
+}
+
 export async function fetchGithubRepository(owner, repo) {
   const repositoryPath = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
   const { payload: repository } = await githubRequest(repositoryPath)
   const branchPath = `${repositoryPath}/branches/${encodeURIComponent(repository.default_branch)}`
-  const [{ payload: branch }, { commits, hasMore }, contributorCount] = await Promise.all([
+  const [
+    { payload: branch },
+    { commits, hasMore },
+    contributorCount,
+    contributors,
+    languages,
+  ] = await Promise.all([
     githubRequest(branchPath),
     fetchGithubCommits(owner, repo, 1),
     fetchGithubContributorCount(owner, repo),
+    fetchGithubContributors(owner, repo),
+    fetchGithubLanguages(owner, repo),
   ])
   const treeSha = branch.commit?.commit?.tree?.sha
   if (!treeSha) {
@@ -248,6 +288,8 @@ export async function fetchGithubRepository(owner, repo) {
     },
     files,
     filesTruncated: tree.truncated || false,
+    contributors,
+    languages,
     loc,
     locError,
     commits,
