@@ -1,4 +1,5 @@
 import Repository from '../models/Repository.js'
+import { analyzeCode, CodeAnalysisError } from '../services/codeAnalysis.js'
 import {
   fetchGithubCommits,
   fetchGithubFile,
@@ -76,5 +77,18 @@ export async function getFile(request, response) {
     return
   }
 
-  response.json(await fetchGithubFile(owner, repo, path, ref))
+  const file = await fetchGithubFile(owner, repo, path, ref)
+  let analysis = null
+  let analysisError = null
+
+  if (!file.isBinary) {
+    try {
+      analysis = analyzeCode(file.content, path)
+    } catch (error) {
+      if (!(error instanceof CodeAnalysisError)) throw error
+      if (error.status !== 415) analysisError = error.message
+    }
+  }
+
+  response.json({ ...file, analysis, analysisError })
 }
