@@ -18,11 +18,32 @@ export async function apiRequest(path, options = {}) {
     ...options.headers,
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    credentials: 'include',
-    headers,
-  });
+  // const response = await fetch(`${API_BASE_URL}${path}`, {
+  //   ...options,
+  //   credentials: 'include',
+  //   headers,
+  // });
+
+  let response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      credentials: 'include',
+      headers,
+    });
+  } catch (error) {
+    console.error('[API network error]', {
+      url: `${API_BASE_URL}${path}`,
+      method: options.method || 'GET',
+      message: error.message,
+    });
+
+    throw new ApiError(
+      `Cannot reach the API for ${options.method || 'GET'} ${path}. Check that the backend is running and the API URL/CORS configuration is correct.`,
+      0,
+    );
+  }
 
   let payload
   try {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { apiRequest } from './api'
 import { AuthContext } from './auth-context'
 
@@ -6,6 +6,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const authRequestVersion = useRef(0)
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -31,18 +32,46 @@ export function AuthProvider({ children }) {
     }
   }, [fetchCurrentUser])
 
+  // useEffect(() => {
+  //   let active = true
+
+  //   fetchCurrentUser()
+  //     .then((result) => {
+  //       if (active) {
+  //         setUser(result.user)
+  //         setError(result.error)
+  //       }
+  //     })
+  //     .finally(() => {
+  //       if (active) setLoading(false)
+  //     })
+
+  //   return () => {
+  //     active = false
+  //   }
+  // }, [fetchCurrentUser])
+
   useEffect(() => {
     let active = true
+    const requestVersion = ++authRequestVersion.current
 
     fetchCurrentUser()
       .then((result) => {
-        if (active) {
+        if (
+          active &&
+          authRequestVersion.current === requestVersion
+        ) {
           setUser(result.user)
           setError(result.error)
         }
       })
       .finally(() => {
-        if (active) setLoading(false)
+        if (
+          active &&
+          authRequestVersion.current === requestVersion
+        ) {
+          setLoading(false)
+        }
       })
 
     return () => {
@@ -50,13 +79,40 @@ export function AuthProvider({ children }) {
     }
   }, [fetchCurrentUser])
 
+  // const authenticate = useCallback(async (action, credentials) => {
+  //   const { user: authenticatedUser } = await apiRequest(`/api/auth/${action}`, {
+  //     method: 'POST',
+  //     body: JSON.stringify(credentials),
+  //   })
+  //   setUser(authenticatedUser)
+  //   setError('')
+  // }, [])
+
   const authenticate = useCallback(async (action, credentials) => {
-    const { user: authenticatedUser } = await apiRequest(`/api/auth/${action}`, {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    })
-    setUser(authenticatedUser)
+    const requestVersion = ++authRequestVersion.current
+
     setError('')
+
+    try {
+      const { user: authenticatedUser } = await apiRequest(
+        `/api/auth/${action}`,
+        {
+          method: 'POST',
+          body: JSON.stringify(credentials),
+        },
+      )
+
+      if (authRequestVersion.current === requestVersion) {
+        setUser(authenticatedUser)
+        setError('')
+      }
+    } catch (requestError) {
+      if (authRequestVersion.current === requestVersion) {
+        setError(requestError.message)
+      }
+
+      throw requestError
+    }
   }, [])
 
   const signOut = useCallback(async () => {

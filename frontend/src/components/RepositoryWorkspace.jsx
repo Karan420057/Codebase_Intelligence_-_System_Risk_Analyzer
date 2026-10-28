@@ -619,12 +619,16 @@ export default function RepositoryWorkspace({
         )}
 
         {activeRepositoryData && (
-          <div className={repositoryRoute
-            ? `grid h-full min-h-0 items-start gap-5 grid-cols-1 ${selectedFile || loadingFile || fileError
-              ? "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[minmax(0,5fr)_minmax(15rem,3fr)_minmax(0,7fr)]"
-              : "lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)] lg:grid-rows-[auto_minmax(0,1fr)]"}`
-            : "mt-6 grid items-start gap-5 lg:grid-cols-2"}
-          >
+        
+            <div className={repositoryRoute
+              ? `grid h-full min-h-0 items-start gap-5 grid-cols-1 ${
+                  selectedFile || loadingFile || fileError
+                    ? "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]"
+                    : "lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)] lg:grid-rows-[auto_minmax(0,1fr)]"
+                }`
+              : "mt-6 grid items-start gap-5 lg:grid-cols-2"}
+            >
+
             <div className={repositoryRoute
               ? `min-w-0 px-4 py-5 sm:px-6 ${selectedFile || loadingFile || fileError ? "lg:col-span-2 xl:col-span-3" : "lg:col-span-2"}`
               : "min-w-0 space-y-5 lg:row-start-1 lg:col-start-1"}
@@ -746,7 +750,7 @@ export default function RepositoryWorkspace({
             </div>
 
             <div className={repositoryRoute
-              ? `min-w-0 space-y-5 px-4 pb-5 sm:px-6 lg:row-start-2 lg:col-start-1 lg:min-h-0 lg:overflow-y-auto ${selectedFile || loadingFile || fileError ? "xl:col-start-1" : ""}`
+              ? `min-w-0 space-y-5 px-4 pb-5 sm:px-6 lg:row-start-2 lg:col-start-1 lg:min-h-0 lg:overflow-y-auto`
               : "min-w-0 space-y-5 lg:row-start-2 lg:col-start-1"}
             >
             <section className="min-w-0 rounded-xl border bg-background">
@@ -869,10 +873,14 @@ export default function RepositoryWorkspace({
             </div>
 
             {repositoryRoute && (
-              <aside className={`min-w-0 space-y-5 px-4 pb-5 sm:px-6 lg:row-start-2 lg:min-h-0 lg:overflow-y-auto ${selectedFile || loadingFile || fileError
-                ? "lg:row-start-3 lg:col-start-1 xl:row-start-2 xl:col-start-2"
-                : "lg:col-start-2"}`}
+              <aside
+                className={`min-w-0 space-y-5 px-4 pb-5 sm:px-6 ${
+                  selectedFile || loadingFile || fileError
+                    ? "lg:col-start-2 lg:row-start-3"
+                    : "lg:col-start-2 lg:row-start-2"
+                }`}
               >
+
                 <section className="rounded-xl border bg-background">
                   <div className="flex items-center gap-2 border-b px-4 py-3 font-medium">
                     <Code2 className="size-4 text-primary" />
@@ -989,10 +997,14 @@ export default function RepositoryWorkspace({
             )}
 
             {(selectedFile || loadingFile || fileError) && (
-              <section className={`relative min-w-0 overflow-hidden border bg-background ${repositoryRoute
-                ? "min-h-[60dvh] border-t lg:row-start-2 lg:col-start-2 lg:h-full lg:min-h-0 lg:border-l lg:border-t-0 xl:col-start-3"
-                : "rounded-xl lg:row-start-1 lg:col-start-2"}
-              `}>
+              <section
+                  className={`relative min-w-0 overflow-hidden border bg-background ${
+                    repositoryRoute
+                      ? "min-h-[65dvh] border-t lg:row-start-2 lg:col-start-2 lg:h-full lg:min-h-[65dvh] lg:border-l lg:border-t-0"
+                      : "rounded-xl lg:row-start-1 lg:col-start-2"
+                  }`}
+              >
+
                 {repositoryRoute && (
                   <span
                     aria-hidden="true"
@@ -1045,9 +1057,10 @@ export default function RepositoryWorkspace({
                   </p>
                 ) : selectedFile ? (
                   <pre className={repositoryRoute
-                    ? "max-h-[60dvh] overflow-auto p-4 text-xs leading-5 lg:h-[calc(100%-3rem)] lg:max-h-none"
-                    : "max-h-96 overflow-auto p-4 text-xs leading-5"}
-                  ><code className="block min-w-max">{getPhysicalLines(selectedFile.content).map((line, index) => (
+                      ? "max-h-[65dvh] overflow-auto p-4 text-xs leading-5 lg:h-[calc(100%-3rem)] lg:max-h-none"
+                      : "max-h-96 overflow-auto p-4 text-xs leading-5"}
+                  >
+                    <code className="block min-w-max">{getPhysicalLines(selectedFile.content).map((line, index) => (
                     <span className="grid grid-cols-[3rem_1fr]" key={index}>
                       <span aria-hidden="true" className="select-none pr-4 text-right text-muted-foreground/60">
                         {index + 1}

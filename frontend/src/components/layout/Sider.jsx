@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "../../lib/i18n.jsx";
 
 const userItems = [
-  { key: "overview", icon: LayoutDashboard, target: "/" },
+  { key: "Dashboard", icon: LayoutDashboard, target: "/" },
   { key: "repositories", icon: FolderGit2, target: "/repositories" },
   { key: "codeAnalysis", icon: Code2, target: "/" },
   { key: "riskReports", icon: Activity, target: "/" },
