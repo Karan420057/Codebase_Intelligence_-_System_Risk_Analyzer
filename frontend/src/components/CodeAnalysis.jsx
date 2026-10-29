@@ -242,10 +242,12 @@ function RepositoryCodeAnalysis({ repository }) {
               </p>
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
+                  ["Lines of code", getPhysicalLines(selectedFile.content).length],
                   ["AST nodes", selectedFile.analysis.nodeCount],
                   ["Functions", selectedFile.analysis.functionCount],
                   ["Classes", selectedFile.analysis.classCount],
                   ["Variables", selectedFile.analysis.variableDeclarationCount],
+                  ["Imports", selectedFile.analysis.importCount],
                 ].map(([label, value]) => (
                   <div className="rounded-lg border bg-background p-3" key={label}>
                     <dt className="text-xs text-muted-foreground">{label}</dt>
