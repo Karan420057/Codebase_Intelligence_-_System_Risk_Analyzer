@@ -101,10 +101,10 @@ export default function AppSidebar({
           const active =
             key === "repositories"
               ? currentPath.startsWith("/repositories")
-              : key === "platformSettings"
-                ? currentPath === "/settings"
-                : key === "codeAnalysis"
-                  ? currentPath === "/code-analysis"
+              : key === "codeAnalysis"
+                ? currentPath === "/code-analysis"
+                : key === "platformSettings"
+                  ? currentPath === "/settings"
                   : target === "/" && currentPath === "/";
 
           return (

@@ -1,15 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  GitBranch,
-  GitFork,
-  RefreshCw,
-  Search,
-  Network,
-  FileCode2,
-  ChartNoAxesCombined,
-} from "lucide-react";
+import { Activity, AlertTriangle, GitBranch, GitFork, RefreshCw, Search, Network, FileCode2, ChartNoAxesCombined } from "lucide-react";
 import { apiRequest } from "../lib/api";
 
 const COLORS = [

@@ -224,6 +224,7 @@ export function analyzeCode(source, path) {
     functionCount,
     classCount,
     variableDeclarationCount,
+    importCount,
     functions,
     classes,
     imports,

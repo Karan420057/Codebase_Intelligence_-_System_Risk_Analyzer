@@ -12,7 +12,17 @@ test('analyzes JavaScript AST structure and declarations', () => {
   assert.equal(result.classCount, 1)
   assert.equal(result.functionCount, 1)
   assert.equal(result.variableDeclarationCount, 1)
+  assert.equal(result.importCount, 1)
   assert.equal(result.imports[0].source, 'value')
+})
+
+test('reports total import count when import details are truncated', () => {
+  const source = Array.from({ length: 101 }, (_, index) => `import "module-${index}";`).join('\n')
+  const result = analyzeCode(source, 'src/imports.js')
+
+  assert.equal(result.importCount, 101)
+  assert.equal(result.imports.length, 100)
+  assert.equal(result.detailsTruncated, true)
 })
 
 test('parses TypeScript JSX files', () => {
