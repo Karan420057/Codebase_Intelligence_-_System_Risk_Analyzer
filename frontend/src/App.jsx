@@ -10,6 +10,7 @@ import { apiRequest } from './lib/api'
 import { useAuth } from './lib/use-auth'
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import CodeAnalysisPage from './components/CodeAnalysisPage'
 
 function App() {
   const { user, loading, error, refresh, signOut } = useAuth()
@@ -180,10 +181,45 @@ function App() {
         </p>
       )}
       
+      {/* {pathname === '/profile' ? (
+        <Profile />
+      ) : pathname === '/settings' ? (
+        <Settings role={user.role} />
+      ) : pathname === '/login' || pathname === '/signup' ? (
+        <RepositoryWorkspace
+          repositoryRoute={repositoryRoute}
+          showRepositoryList={pathname === '/repositories'}
+          repositories={repositories}
+          repositoriesLoading={repositoriesLoading}
+          repositoriesError={repositoriesError}
+          onRepositoryFetched={rememberRepository}
+          onNavigate={navigate}
+        />
+      ) : user.role === 'user' ? (
+        <RepositoryWorkspace
+          repositoryRoute={repositoryRoute}
+          showRepositoryList={pathname === '/repositories'}
+          repositories={repositories}
+          repositoriesLoading={repositoriesLoading}
+          repositoriesError={repositoriesError}
+          onRepositoryFetched={rememberRepository}
+          onNavigate={navigate}
+        />
+      ) : (
+        <AdminDashboard />
+      )} */}
+
       {pathname === '/profile' ? (
         <Profile />
       ) : pathname === '/settings' ? (
         <Settings role={user.role} />
+      ) : pathname === '/code-analysis' && user.role === 'user' ? (
+        <CodeAnalysisPage
+          repositories={repositories}
+          repositoriesLoading={repositoriesLoading}
+          repositoriesError={repositoriesError}
+          onNavigate={navigate}
+        />
       ) : pathname === '/login' || pathname === '/signup' ? (
         <RepositoryWorkspace
           repositoryRoute={repositoryRoute}

@@ -18,12 +18,6 @@ export async function apiRequest(path, options = {}) {
     ...options.headers,
   }
 
-  // const response = await fetch(`${API_BASE_URL}${path}`, {
-  //   ...options,
-  //   credentials: 'include',
-  //   headers,
-  // });
-
   let response;
 
   try {

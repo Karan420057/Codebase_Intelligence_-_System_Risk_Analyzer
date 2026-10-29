@@ -1,11 +1,7 @@
 import Repository from '../models/Repository.js'
 import { analyzeCode, CodeAnalysisError } from '../services/codeAnalysis.js'
-import {
-  fetchGithubCommits,
-  fetchGithubFile,
-  fetchGithubRepository,
-  isGithubName,
-} from '../services/github.js'
+import { analyzeRepositoryDependencies } from '../services/repositoryDependencyAnalysis.js'
+import { fetchGithubCommits, fetchGithubFile, fetchGithubRepository, isGithubName } from '../services/github.js'
 
 function validateRepositoryName(owner, repo, response) {
   if (!isGithubName(owner) || !isGithubName(repo)) {
@@ -92,3 +88,28 @@ export async function getFile(request, response) {
 
   response.json({ ...file, analysis, analysisError })
 }
+
+export async function getRepositoryDependencyAnalysis(request, response) {
+  const { owner, repo } = request.params;
+  const start = typeof request.query.start === 'string'
+    ? request.query.start
+    : undefined;
+
+  if (!validateRepositoryName(owner, repo, response)) return;
+
+  if (start && (
+    start.length > 1024
+    || start.split('/').some((part) =>
+      !part || part === '.' || part === '..'
+    )
+  )) {
+    response.status(400).json({
+      error: 'Select a valid starting file.',
+    });
+    return;
+  }
+
+  const result = await analyzeRepositoryDependencies(owner, repo, start);
+  response.json(result);
+}
+

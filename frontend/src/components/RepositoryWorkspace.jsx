@@ -832,7 +832,7 @@ export default function RepositoryWorkspace({
                           href={commit.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="block whitespace-pre-wrap break-words text-sm font-medium hover:text-primary"
+                          className="block whitespace-pre-wrap wrap-break-word text-sm font-medium hover:text-primary"
                         >
                           {commit.message}
                         </a>

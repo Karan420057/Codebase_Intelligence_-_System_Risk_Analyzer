@@ -1,4 +1,18 @@
-import { Bot, Activity, Boxes, ChevronLeft, ChevronRight, CircleHelp, Code2, FileSearch, FolderGit2, LayoutDashboard, Settings, ShieldCheck, Users, } from "lucide-react";
+import {
+  Bot,
+  Activity,
+  Boxes,
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  Code2,
+  FileSearch,
+  FolderGit2,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -7,7 +21,7 @@ import { useLanguage } from "../../lib/i18n.jsx";
 const userItems = [
   { key: "Dashboard", icon: LayoutDashboard, target: "/" },
   { key: "repositories", icon: FolderGit2, target: "/repositories" },
-  { key: "codeAnalysis", icon: Code2, target: "/" },
+  { key: "codeAnalysis", icon: Code2, target: "/code-analysis" },
   { key: "riskReports", icon: Activity, target: "/" },
   { key: "codeSearch", icon: FileSearch, target: "/" },
   { key: "aiAssistant", icon: Bot, target: "/" },
@@ -63,9 +77,7 @@ export default function AppSidebar({
           variant="ghost"
           size="icon"
           className="size-8 shrink-0"
-          aria-label={
-            collapsed ? t("expandSidebar") : t("collapseSidebar")
-          }
+          aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
           onClick={() => setCollapsed((value) => !value)}
         >
           {collapsed ? (
@@ -82,7 +94,7 @@ export default function AppSidebar({
         <p className="mb-3 px-2 text-xs font-medium text-muted-foreground">
           {!collapsed && t("menu")}
         </p>
-        
+
         {items.map(({ key, icon: Icon, target }) => {
           const label = t(key);
 
@@ -91,7 +103,9 @@ export default function AppSidebar({
               ? currentPath.startsWith("/repositories")
               : key === "platformSettings"
                 ? currentPath === "/settings"
-                : target === "/" && currentPath === "/";
+                : key === "codeAnalysis"
+                  ? currentPath === "/code-analysis"
+                  : target === "/" && currentPath === "/";
 
           return (
             <div key={key}>
@@ -133,9 +147,7 @@ export default function AppSidebar({
                           : "Show repositories"
                       }
                       aria-expanded={repositoriesExpanded}
-                      onClick={() =>
-                        setRepositoriesExpanded((value) => !value)
-                      }
+                      onClick={() => setRepositoriesExpanded((value) => !value)}
                     >
                       {repositoriesExpanded ? (
                         <ChevronLeft className="size-4 -rotate-90" />
@@ -152,8 +164,7 @@ export default function AppSidebar({
                 repositories.length > 0 && (
                   <div className="ml-5 mt-1 space-y-1 border-l pl-3">
                     {repositories.map((repository) => {
-                      const repositoryPath =
-                        `/repositories/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`;
+                      const repositoryPath = `/repositories/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`;
 
                       const selected = currentPath === repositoryPath;
 
@@ -182,9 +193,7 @@ export default function AppSidebar({
         <Button
           variant="ghost"
           className={`w-full gap-3 ${
-            collapsed
-              ? "justify-center px-0"
-              : "justify-start px-3"
+            collapsed ? "justify-center px-0" : "justify-start px-3"
           }`}
           title={collapsed ? t("helpSupport") : undefined}
         >
