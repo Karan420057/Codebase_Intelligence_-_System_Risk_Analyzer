@@ -7,7 +7,7 @@ import { useLanguage } from "../../lib/i18n.jsx";
 const userItems = [
   { key: "Dashboard", icon: LayoutDashboard, target: "/" },
   { key: "repositories", icon: FolderGit2, target: "/repositories" },
-  { key: "codeAnalysis", icon: Code2, target: "/" },
+  { key: "codeAnalysis", icon: Code2, target: "/analysis" },
   { key: "riskReports", icon: Activity, target: "/" },
   { key: "codeSearch", icon: FileSearch, target: "/" },
   { key: "aiAssistant", icon: Bot, target: "/" },
@@ -89,6 +89,8 @@ export default function AppSidebar({
           const active =
             key === "repositories"
               ? currentPath.startsWith("/repositories")
+              : key === "codeAnalysis"
+                ? currentPath === "/analysis"
               : key === "platformSettings"
                 ? currentPath === "/settings"
                 : target === "/" && currentPath === "/";
