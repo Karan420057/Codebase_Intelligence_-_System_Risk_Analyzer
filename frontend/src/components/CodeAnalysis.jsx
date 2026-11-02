@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, GitBranch, GitFork, RefreshCw, Search, Network, FileCode2, ChartNoAxesCombined } from "lucide-react";
 import { apiRequest } from "../lib/api";
+import GraphInsights, { NodeMetrics } from "./analysis/GraphInsights";
 
 const COLORS = [
   "#6366f1",
@@ -247,7 +248,7 @@ function LanguageDonut({ languages = [] }) {
   );
 }
 
-function DependencyGraph({ files, selectedFile, onSelectFile }) {
+function DependencyGraph({ files, selectedFile, onSelectFile, nodeFlags = {} }) {
   const [expanded, setExpanded] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [hoveredEdge, setHoveredEdge] = useState(null);
@@ -482,9 +483,17 @@ function DependencyGraph({ files, selectedFile, onSelectFile }) {
                     fill={selected ? "#6366f1" : "hsl(var(--card))"}
                     fillOpacity={1}
                     stroke={
-                      selected ? "#818cf8" : hoveredEdge ? "#94a3b8" : "#64748b"
+                      selected
+                        ? "#818cf8"
+                        : nodeFlags[path]?.inCycle
+                          ? "#ef4444"
+                          : nodeFlags[path]?.isHotspot
+                            ? "#f59e0b"
+                            : hoveredEdge
+                              ? "#94a3b8"
+                              : "#64748b"
                     }
-                    strokeWidth={selected ? 2 : 1}
+                    strokeWidth={selected || nodeFlags[path] ? 2 : 1}
                   />
                   <title>{path}</title>
                   <text
@@ -728,6 +737,19 @@ export default function CodeAnalysis({ owner, repo, branch }) {
   const currentFile = files.find((file) => file.path === selectedFile);
   const dfs = traversals.dfs || [];
   const bfs = traversals.bfs || [];
+  const currentNode = data?.graphModel?.nodes?.find(
+    (node) => node.id === selectedFile,
+  );
+
+  const nodeFlags = useMemo(() => {
+    const flags = {};
+    for (const node of data?.graphModel?.nodes || []) {
+      if (node.isHotspot || node.inCycle) {
+        flags[node.id] = { isHotspot: node.isHotspot, inCycle: node.inCycle };
+      }
+    }
+    return flags;
+  }, [data]);
 
   if (loading) {
     return (
@@ -982,8 +1004,14 @@ export default function CodeAnalysis({ owner, repo, branch }) {
             files={files}
             selectedFile={selectedFile}
             onSelectFile={setSelectedFile}
+            nodeFlags={nodeFlags}
           />
         </Panel>
+
+        <GraphInsights
+          graphModel={data.graphModel}
+          onSelectFile={setSelectedFile}
+        />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
@@ -1062,6 +1090,7 @@ export default function CodeAnalysis({ owner, repo, branch }) {
                 Import declarations:{" "}
                 <strong>{currentFile.importDeclarationCount}</strong>
               </p>
+              <NodeMetrics node={currentNode} />
             </div>
 
             <p className="mt-4 text-xs font-medium text-muted-foreground">

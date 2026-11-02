@@ -1,5 +1,8 @@
 import { parse } from '@babel/parser'
 
+import { measureCodeStructure } from './codeStructure.js'
+import { extractModuleReferences } from './importextraction.js'
+
 const supportedExtensions = new Set(['.js', '.jsx', '.mjs', '.cjs', '.ts', '.tsx', '.mts', '.cts'])
 const maximumSourceBytes = 1024 * 1024
 const maximumDetails = 100
@@ -229,6 +232,8 @@ export function analyzeCode(source, path) {
     classes,
     imports,
     topLevelNodeTypes: ast.program.body.map((node) => node.type),
+    structure: measureCodeStructure(ast.program, source),
+    moduleReferences: extractModuleReferences(ast.program),
     detailsTruncated: functionCount > functions.length || classCount > classes.length || importCount > imports.length,
   }
 }

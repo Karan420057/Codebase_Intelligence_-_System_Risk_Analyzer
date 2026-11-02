@@ -3,6 +3,7 @@ import { fetchGithubFile, fetchGithubRepository } from './github.js';
 import { buildDependencyGraph } from './dependencyGraph.js';
 import { depthFirstSearch, breadthFirstSearch } from './graphTraversal.js';
 import { detectCycles } from './cycleDetection.js';
+import { buildGraphModel } from './dependencyGraphModel.js';
 
 const sourceExtensions = new Set([
   '.js', '.jsx', '.mjs', '.cjs',
@@ -58,7 +59,8 @@ export async function analyzeRepositoryDependencies(
           const analysis = analyzeCode(result.content, file.path);
           analyses.push({
             path: file.path,
-            imports: analysis.imports,
+            imports: analysis.moduleReferences,
+            structure: analysis.structure,
           });
         } catch (error) {
           if (!(error instanceof CodeAnalysisError)) throw error;
@@ -100,6 +102,7 @@ export async function analyzeRepositoryDependencies(
     : { order: [], visited: [], distances: {} };
 
   const cycleResult = detectCycles(result.graph);
+  const graphModel = buildGraphModel(result, analyses, cycleResult.cycles);
 
   return {
     repository: repository.repository.fullName,
@@ -110,7 +113,7 @@ export async function analyzeRepositoryDependencies(
       dependencyEdges: result.edgeCount,
       unresolvedImports: result.unresolved.length,
       circularDependencies: cycleResult.cycleCount,
-      cycleDetectionTruncated: cycleResult.truncated,
+      cycleDetectionTruncated: cycleResult.truncated,graphModel,
       fileErrors: fileErrors.length,
       filesTruncated: sourceFiles.length < repository.files.filter(
         (file) => isSupportedSource(file.path),

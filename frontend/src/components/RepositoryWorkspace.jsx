@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest } from "@/lib/api";
 import RepositoryLoading from "./repository/RepositoryLoading";
+import FileStructurePanel from "./analysis/FileStructurePanel";
 
 function formatDate(value) {
   if (!value) return "Unknown date";
@@ -806,6 +807,8 @@ export default function RepositoryWorkspace({
                 )}
             </section>
 
+            <FileStructurePanel file={selectedFile} />
+            
             <section className="min-w-0 rounded-xl border bg-background">
               <div className="flex items-center gap-2 border-b px-4 py-3 font-medium">
                 <GitCommitHorizontal className="size-4 text-primary" />
