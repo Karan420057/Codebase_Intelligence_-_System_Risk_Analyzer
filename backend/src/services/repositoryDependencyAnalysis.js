@@ -59,6 +59,12 @@ export async function analyzeRepositoryDependencies(
           analyses.push({
             path: file.path,
             imports: analysis.imports,
+            linesOfCode: analysis.linesOfCode,
+            nodeCount: analysis.nodeCount,
+            functionCount: analysis.functionCount,
+            classCount: analysis.classCount,
+            importCount: analysis.importCount,
+            callCount: analysis.callCount,
           });
         } catch (error) {
           if (!(error instanceof CodeAnalysisError)) throw error;
@@ -100,6 +106,19 @@ export async function analyzeRepositoryDependencies(
     : { order: [], visited: [], distances: {} };
 
   const cycleResult = detectCycles(result.graph);
+  const astSummary = analyses.reduce((summary, analysis) => ({
+    astNodes: summary.astNodes + analysis.nodeCount,
+    functionCount: summary.functionCount + analysis.functionCount,
+    classCount: summary.classCount + analysis.classCount,
+    importCount: summary.importCount + analysis.importCount,
+    callCount: summary.callCount + analysis.callCount,
+  }), {
+    astNodes: 0,
+    functionCount: 0,
+    classCount: 0,
+    importCount: 0,
+    callCount: 0,
+  });
 
   return {
     repository: repository.repository.fullName,
@@ -107,6 +126,8 @@ export async function analyzeRepositoryDependencies(
     languages: repository.languages || [],
     summary: {
       analyzedFiles: result.fileCount,
+      linesOfCode: repository.loc,
+      ...astSummary,
       dependencyEdges: result.edgeCount,
       unresolvedImports: result.unresolved.length,
       circularDependencies: cycleResult.cycleCount,

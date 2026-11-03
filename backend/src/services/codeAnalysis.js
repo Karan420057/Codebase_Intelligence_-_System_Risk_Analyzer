@@ -141,6 +141,7 @@ export function analyzeCode(source, path) {
   let classCount = 0
   let variableDeclarationCount = 0
   let importCount = 0
+  let callCount = 0
   const functions = []
   const classes = []
   const imports = []
@@ -193,6 +194,9 @@ export function analyzeCode(source, path) {
         })
       }
     }
+    if (node.type === 'CallExpression' || node.type === 'OptionalCallExpression') {
+      callCount += 1
+    }
 
     for (const [childKey, value] of Object.entries(node)) {
       if (childKey === 'loc' || childKey === 'start' || childKey === 'end' || childKey === 'extra' || childKey === 'comments' || childKey === 'tokens') continue
@@ -220,11 +224,13 @@ export function analyzeCode(source, path) {
 
   return {
     language: extension.includes('ts') ? 'TypeScript' : 'JavaScript',
+    linesOfCode: source.split(/\r\n?|\n/).filter((line) => line.trim()).length,
     nodeCount,
     functionCount,
     classCount,
     variableDeclarationCount,
     importCount,
+    callCount,
     functions,
     classes,
     imports,

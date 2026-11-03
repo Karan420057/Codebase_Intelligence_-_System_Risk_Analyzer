@@ -4,16 +4,27 @@ import { analyzeCode, CodeAnalysisError } from './codeAnalysis.js'
 
 test('analyzes JavaScript AST structure and declarations', () => {
   const result = analyzeCode(
-    'import value from "value"; export class Example { run(input) { const output = input; return output; } }',
+    'import value from "value";\nexport class Example { run(input) { const output = value(input); return output; } }',
     'src/example.js',
   )
 
   assert.equal(result.language, 'JavaScript')
+  assert.equal(result.linesOfCode, 2)
+  assert.ok(result.nodeCount > 0)
   assert.equal(result.classCount, 1)
   assert.equal(result.functionCount, 1)
   assert.equal(result.variableDeclarationCount, 1)
   assert.equal(result.importCount, 1)
+  assert.equal(result.callCount, 1)
   assert.equal(result.imports[0].source, 'value')
+})
+
+test('counts optional calls and handles empty files and trailing newlines in LOC', () => {
+  const result = analyzeCode('service?.run();\n', 'src/optional.js')
+
+  assert.equal(result.callCount, 1)
+  assert.equal(result.linesOfCode, 1)
+  assert.equal(analyzeCode('', 'src/empty.js').linesOfCode, 0)
 })
 
 test('reports total import count when import details are truncated', () => {

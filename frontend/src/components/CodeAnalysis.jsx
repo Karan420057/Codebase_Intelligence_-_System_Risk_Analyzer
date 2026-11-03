@@ -1,17 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, GitBranch, GitFork, RefreshCw, Search, Network, FileCode2, ChartNoAxesCombined } from "lucide-react";
+import { Activity, AlertTriangle, GitBranch, GitFork, RefreshCw, Search, Network, FileCode2 } from "lucide-react";
 import { apiRequest } from "../lib/api";
-
-const COLORS = [
-  "#6366f1",
-  "#06b6d4",
-  "#10b981",
-  "#f59e0b",
-  "#ec4899",
-  "#8b5cf6",
-  "#64748b",
-  "#ef4444",
-];
 
 const MAX_GRAPH_NODES = 24;
 const MAX_FLOW_NODES = 12;
@@ -70,181 +59,6 @@ function Panel({ id, title, description, icon: Icon, action, children }) {
 function shortPath(path, max = 28) {
   if (!path || path.length <= max) return path || "";
   return `…${path.slice(-(max - 1))}`;
-}
-
-function getLanguage(path) {
-  const filename = path.split("/").pop() || "";
-  const match = filename.match(/\.([^.]+)$/);
-
-  if (!match) return "Other";
-
-  const extension = match[1].toLowerCase();
-
-  const languages = {
-    js: "JavaScript",
-    jsx: "JavaScript",
-    mjs: "JavaScript",
-    cjs: "JavaScript",
-    ts: "TypeScript",
-    tsx: "TypeScript",
-    mts: "TypeScript",
-    cts: "TypeScript",
-    py: "Python",
-    java: "Java",
-    go: "Go",
-    rs: "Rust",
-    css: "CSS",
-    scss: "CSS",
-    html: "HTML",
-    json: "JSON",
-    vue: "Vue",
-    php: "PHP",
-    rb: "Ruby",
-    cpp: "C++",
-    cc: "C++",
-    c: "C",
-    cs: "C#",
-    swift: "Swift",
-    kt: "Kotlin",
-    sql: "SQL",
-    md: "Markdown",
-  };
-
-  return languages[extension] || "Other";
-}
-
-function LanguageDonut({ languages = [] }) {
-  const entries = useMemo(() => {
-    const totalBytes = languages.reduce(
-      (sum, language) => sum + (Number(language.bytes) || 0),
-      0,
-    );
-
-    return [...languages]
-      .filter((language) => Number(language.bytes) > 0)
-      .sort((a, b) => b.bytes - a.bytes)
-      .map((language) => ({
-        ...language,
-        percentage: totalBytes
-          ? (Number(language.bytes) / totalBytes) * 100
-          : 0,
-      }));
-  }, [languages]);
-
-  const totalBytes = entries.reduce(
-    (sum, language) => sum + Number(language.bytes),
-    0,
-  );
-  const radius = 39;
-  const circumference = 2 * Math.PI * radius;
-  let offset = 0;
-
-  return (
-    <Panel
-      title="Languages"
-      description="Repository-wide language distribution reported by GitHub."
-      icon={ChartNoAxesCombined}
-    >
-      {entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          GitHub has not reported language statistics for this repository.
-        </p>
-      ) : (
-        <div className="grid items-center gap-4 sm:grid-cols-[112px_minmax(0,1fr)]">
-          <svg
-            viewBox="0 0 100 100"
-            role="img"
-            aria-label="Repository language distribution"
-            className="mx-auto w-28 max-w-full"
-          >
-            <circle
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="none"
-              stroke="currentColor"
-              strokeOpacity="0.1"
-              strokeWidth="11"
-            />
-            {entries.map((language, index) => {
-              const segment = (language.percentage / 100) * circumference;
-              const circle = (
-                <circle
-                  key={language.name}
-                  cx="50"
-                  cy="50"
-                  r={radius}
-                  fill="none"
-                  stroke={COLORS[index % COLORS.length]}
-                  strokeWidth="11"
-                  strokeDasharray={`${segment} ${circumference - segment}`}
-                  strokeDashoffset={-offset}
-                  transform="rotate(-90 50 50)"
-                />
-              );
-
-              offset += segment;
-              return circle;
-            })}
-            <text
-              x="50"
-              y="48"
-              textAnchor="middle"
-              fontSize="11"
-              fontWeight="600"
-              fill="currentColor"
-            >
-              {entries.length}
-            </text>
-            <text
-              x="50"
-              y="59"
-              textAnchor="middle"
-              fontSize="6"
-              fill="currentColor"
-              opacity="0.7"
-            >
-              languages
-            </text>
-          </svg>
-
-          <div className="min-w-0 space-y-3">
-            {entries.map((language, index) => (
-              <div key={language.name}>
-                <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-                  <span className="flex min-w-0 items-center gap-2 font-medium">
-                    <span
-                      className="size-2.5 shrink-0 rounded-full"
-                      style={{
-                        backgroundColor: COLORS[index % COLORS.length],
-                      }}
-                    />
-                    <span className="truncate">{language.name}</span>
-                  </span>
-                  <span className="shrink-0 tabular-nums text-muted-foreground">
-                    {language.percentage.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${language.percentage}%`,
-                      backgroundColor: COLORS[index % COLORS.length],
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      <p className="mt-3 text-xs text-muted-foreground">
-        Percentages are calculated from GitHub's reported language bytes, not
-        the number of files.
-      </p>
-    </Panel>
-  );
 }
 
 function DependencyGraph({ files, selectedFile, onSelectFile }) {
@@ -911,7 +725,7 @@ export default function CodeAnalysis({ owner, repo, branch }) {
             {data.repository || `${owner}/${repo}`}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Dependency structure, traversal paths, language mix, and circular
+            AST metrics, dependency structure, traversal paths, and circular
             dependency detection.
             {data.branch && ` Branch: ${data.branch}`}
           </p>
@@ -970,7 +784,34 @@ export default function CodeAnalysis({ owner, repo, branch }) {
       </div>
 
       <div className="space-y-5">
-        <LanguageDonut languages={data.languages || []} />
+        <Panel
+          title="AST analysis"
+          description="Babel Parser metrics across successfully parsed JavaScript and TypeScript files."
+          icon={FileCode2}
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+            {[
+              [
+                "Repository LOC",
+                summary.linesOfCode === null || summary.linesOfCode === undefined
+                  ? "Unavailable"
+                  : summary.linesOfCode.toLocaleString(),
+              ],
+              ["AST nodes", summary.astNodes],
+              ["Functions", summary.functionCount],
+              ["Classes", summary.classCount],
+              ["Imports", summary.importCount],
+              ["Calls", summary.callCount],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums">
+                  {typeof value === "number" ? value.toLocaleString() : value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Panel>
 
         <Panel
           id="dependency-graph"
