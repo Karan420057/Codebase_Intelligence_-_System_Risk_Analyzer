@@ -39,34 +39,110 @@ function resolveImport(importer, source, files) {
   return candidates.find((candidate) => files.has(candidate)) || null;
 }
 
-export function buildDependencyGraph(analyses) {
+// export function buildDependencyGraph(analyses) {
+//   const fileSet = new Set(analyses.map((item) => item.path));
+//   const graph = new Map();
+//   const unresolved = [];
+//   const importCounts = new Map();
+
+//   for (const analysis of analyses) {
+//     graph.set(analysis.path, new Set());
+//     importCounts.set(analysis.path, analysis.imports.length);
+//   }
+
+//   for (const analysis of analyses) {
+//     const dependencies = graph.get(analysis.path);
+
+//     for (const item of analysis.imports) {
+//       const resolved = resolveImport(
+//         analysis.path,
+//         item.source,
+//         fileSet,
+//       );
+
+//       if (resolved) {
+//         dependencies.add(resolved);
+//       } else {
+//         unresolved.push({
+//           file: analysis.path,
+//           source: item.source,
+//         });
+//       }
+//     }
+//   }
+
+//   const incoming = new Map(
+//     [...graph.keys()].map((path) => [path, 0]),
+//   );
+
+//   for (const dependencies of graph.values()) {
+//     for (const dependency of dependencies) {
+//       incoming.set(dependency, incoming.get(dependency) + 1);
+//     }
+//   }
+
+//   const files = [...graph.entries()].map(([path, dependencies]) => ({
+//     path,
+//     dependencyCount: dependencies.size,
+//     importDeclarationCount: importCounts.get(path) || 0,
+//     dependentCount: incoming.get(path) || 0,
+//     dependencies: [...dependencies].sort(),
+//   }));
+
+//   return {
+//     graph,
+//     files,
+//     fileCount: graph.size,
+//     edgeCount: files.reduce(
+//       (total, file) => total + file.dependencyCount,
+//       0,
+//     ),
+//     unresolved,
+//   };
+// }
+
+
+export function buildDependencyGraph(analyses, extracted = null) {
   const fileSet = new Set(analyses.map((item) => item.path));
   const graph = new Map();
-  const unresolved = [];
   const importCounts = new Map();
+
+  const resolvedImports = extracted?.imports || [];
+  const unresolved = extracted?.unresolved || [];
+  const external = extracted?.external || [];
 
   for (const analysis of analyses) {
     graph.set(analysis.path, new Set());
-    importCounts.set(analysis.path, analysis.imports.length);
+    importCounts.set(analysis.path, analysis.imports?.length || 0);
   }
 
-  for (const analysis of analyses) {
-    const dependencies = graph.get(analysis.path);
+  if (extracted) {
+    for (const item of resolvedImports) {
+      if (!fileSet.has(item.file) || !fileSet.has(item.resolved)) {
+        continue;
+      }
 
-    for (const item of analysis.imports) {
-      const resolved = resolveImport(
-        analysis.path,
-        item.source,
-        fileSet,
-      );
+      graph.get(item.file).add(item.resolved);
+    }
+  } else {
+    for (const analysis of analyses) {
+      const dependencies = graph.get(analysis.path);
 
-      if (resolved) {
-        dependencies.add(resolved);
-      } else {
-        unresolved.push({
-          file: analysis.path,
-          source: item.source,
-        });
+      for (const item of analysis.imports || []) {
+        const resolved = resolveImport(
+          analysis.path,
+          item.source,
+          fileSet,
+        );
+
+        if (resolved) {
+          dependencies.add(resolved);
+        } else {
+          unresolved.push({
+            file: analysis.path,
+            source: item.source,
+          });
+        }
       }
     }
   }
@@ -77,7 +153,10 @@ export function buildDependencyGraph(analyses) {
 
   for (const dependencies of graph.values()) {
     for (const dependency of dependencies) {
-      incoming.set(dependency, incoming.get(dependency) + 1);
+      incoming.set(
+        dependency,
+        (incoming.get(dependency) || 0) + 1,
+      );
     }
   }
 
@@ -97,6 +176,8 @@ export function buildDependencyGraph(analyses) {
       (total, file) => total + file.dependencyCount,
       0,
     ),
+    internalImportCount: resolvedImports.length,
     unresolved,
+    external,
   };
 }

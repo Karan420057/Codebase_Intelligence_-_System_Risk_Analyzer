@@ -1,10 +1,10 @@
-
 import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/use-auth'
+import { getAuthErrorMessage } from '@/lib/auth-error'
 
 export default function SignupPage() {
   const { authenticate } = useAuth()
@@ -23,7 +23,8 @@ export default function SignupPage() {
     try {
       await authenticate('register', { name, email, password })
     } catch (requestError) {
-      setError(requestError.message)
+      // setError(requestError.message)
+      setError(getAuthErrorMessage(requestError, 'register'))
     } finally {
       setSubmitting(false)
     }

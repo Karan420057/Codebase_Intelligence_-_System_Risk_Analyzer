@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/use-auth'
+import { getAuthErrorMessage } from '@/lib/auth-error'
 
 export default function LoginPage() {
   const { authenticate } = useAuth()
@@ -20,8 +21,17 @@ export default function LoginPage() {
 
     try {
       await authenticate('login', { email, password })
-    } catch (requestError) {
-      setError(requestError.message)
+    } 
+    
+    // catch (requestError) {
+    //   setError(requestError.message)
+    // } finally {
+    //   setSubmitting(false)
+    // }
+
+    catch (requestError) {
+      console.error('[Login Error]', requestError)
+      setError(getAuthErrorMessage(requestError, 'login'))
     } finally {
       setSubmitting(false)
     }
@@ -90,10 +100,26 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && (
+          {/* {error && (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
+          )} */}
+
+          {error && (
+            <div
+              className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3"
+              role="alert"
+              aria-live="polite"
+            >
+              <div className="mt-0.5 shrink-0">
+                <ShieldCheck className="size-4 text-destructive" />
+              </div>
+
+              <p className="text-sm leading-5 text-destructive">
+                {error}
+              </p>
+            </div>
           )}
 
           <Button className="w-full gap-2" type="submit" disabled={submitting}>

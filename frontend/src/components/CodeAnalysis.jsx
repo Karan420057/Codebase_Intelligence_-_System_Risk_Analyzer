@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, GitBranch, GitFork, RefreshCw, Search, Network, FileCode2 } from "lucide-react";
+import { Activity, AlertTriangle, GitBranch, GitFork, RefreshCw, Search, Network, FileCode2, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiRequest } from "../lib/api";
 
 const MAX_GRAPH_NODES = 24;
@@ -32,7 +32,7 @@ function Metric({ label, value, icon: Icon, onClick, disabled = false }) {
 
 function Panel({ id, title, description, icon: Icon, action, children }) {
   return (
-    <section id={id} className="min-w-0 rounded-xl border bg-card p-4 sm:p-5">
+    <section id={id} className="flex h-full min-w-0 flex-col rounded-xl border bg-card p-4 sm:p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           {Icon && (
@@ -430,51 +430,106 @@ function DependencyGraph({ files, selectedFile, onSelectFile }) {
   );
 }
 
-function TraversalFlow({ title, description, paths, distances }) {
-  const visible = paths.slice(0, MAX_FLOW_NODES);
+// function TraversalFlow({ title, description, paths, distances }) {
+//   const visible = paths.slice(0, MAX_FLOW_NODES);
+
+//   return (
+//     <Panel title={title} description={description} icon={GitBranch}>
+//       {visible.length === 0 ? (
+//         <p className="text-sm text-muted-foreground">
+//           No traversal nodes are available.
+//         </p>
+//       ) : (
+//         <div className="space-y-2">
+//           {visible.map((path, index) => (
+//             <div key={`${path}-${index}`} className="flex items-center gap-2">
+//               <div className="flex size-7 shrink-0 items-center justify-center rounded-full border bg-background text-xs font-semibold">
+//                 {index + 1}
+//               </div>
+//               <div className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2">
+//                 <p className="break-all font-mono text-xs" title={path}>
+//                   {path}
+//                 </p>
+//                 {distances && (
+//                   <p className="mt-1 text-xs text-muted-foreground">
+//                     Distance from start: {distances[path] ?? "unknown"}
+//                   </p>
+//                 )}
+//               </div>
+//             </div>
+//           ))}
+//           {visible.length > 1 && (
+//             <p className="pl-9 text-xs text-muted-foreground">
+//               Ordered traversal: node {visible.length > 1 ? "1 → " : ""}
+//               {visible.length}
+//             </p>
+//           )}
+//           {paths.length > MAX_FLOW_NODES && (
+//             <p className="text-xs text-muted-foreground">
+//               Showing the first {MAX_FLOW_NODES} of {paths.length} traversal
+//               nodes.
+//             </p>
+//           )}
+//         </div>
+//       )}
+//     </Panel>
+//   );
+// }
+
+
+function TraversalFlow({ title, description, paths = [], distances }) {
+  const hasPaths = paths.length > 0;
 
   return (
     <Panel title={title} description={description} icon={GitBranch}>
-      {visible.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+      {!hasPaths ? (
+        <div className="flex min-h-20 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
           No traversal nodes are available.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {visible.map((path, index) => (
-            <div key={`${path}-${index}`} className="flex items-center gap-2">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-full border bg-background text-xs font-semibold">
-                {index + 1}
-              </div>
-              <div className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2">
-                <p className="break-all font-mono text-xs" title={path}>
-                  {path}
-                </p>
-                {distances && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Distance from start: {distances[path] ?? "unknown"}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-          {visible.length > 1 && (
-            <p className="pl-9 text-xs text-muted-foreground">
-              Ordered traversal: node {visible.length > 1 ? "1 → " : ""}
-              {visible.length}
-            </p>
-          )}
-          {paths.length > MAX_FLOW_NODES && (
-            <p className="text-xs text-muted-foreground">
-              Showing the first {MAX_FLOW_NODES} of {paths.length} traversal
-              nodes.
-            </p>
-          )}
         </div>
+      ) : (
+        <>
+          <div className="max-h-80 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2">
+            <div className="space-y-2">
+              {paths.map((path, index) => (
+                <div
+                  key={`${path}-${index}`}
+                  className="flex items-center gap-3 rounded-lg border border-border/70 bg-background/70 p-2 transition-colors hover:border-primary/40 hover:bg-muted/40"
+                >
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                    {index + 1}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="break-all font-mono text-xs leading-5"
+                      title={path}
+                    >
+                      {path}
+                    </p>
+
+                    {distances && (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Distance from start: {distances[path] ?? "unknown"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-auto flex items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
+            <span>
+              {paths.length} {paths.length === 1 ? "node" : "nodes"} visited
+            </span>
+            <span>Traversal order: 1 → {paths.length}</span>
+          </div>
+        </>
       )}
     </Panel>
   );
 }
+
 
 export default function CodeAnalysis({ owner, repo, branch }) {
   const [data, setData] = useState(null);
@@ -482,6 +537,7 @@ export default function CodeAnalysis({ owner, repo, branch }) {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedFile, setSelectedFile] = useState("");
+  const [astMetricIndex, setAstMetricIndex] = useState(0);
 
   function scrollToSection(id) {
     document.getElementById(id)?.scrollIntoView({
@@ -784,33 +840,86 @@ export default function CodeAnalysis({ owner, repo, branch }) {
       </div>
 
       <div className="space-y-5">
-        <Panel
-          title="AST analysis"
+        <Panel title="AST analysis" icon={FileCode2}
           description="Babel Parser metrics across successfully parsed JavaScript and TypeScript files."
-          icon={FileCode2}
         >
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-            {[
-              [
-                "Repository LOC",
-                summary.linesOfCode === null || summary.linesOfCode === undefined
-                  ? "Unavailable"
-                  : summary.linesOfCode.toLocaleString(),
-              ],
-              ["AST nodes", summary.astNodes],
-              ["Functions", summary.functionCount],
-              ["Classes", summary.classCount],
-              ["Imports", summary.importCount],
-              ["Calls", summary.callCount],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="mt-1 text-xl font-semibold tabular-nums">
-                  {typeof value === "number" ? value.toLocaleString() : value}
-                </p>
-              </div>
-            ))}
-          </div>
+          {(() => {
+  const astMetrics = [
+    ["Repository LOC", summary.linesOfCode],
+    ["AST nodes", summary.astNodes],
+    ["Functions", summary.functionCount],
+    ["Classes", summary.classCount],
+    ["Imports", summary.importCount],
+    ["Calls", summary.callCount],
+    ["Max nesting depth", summary.maxNestingDepth],
+    ["Max function nesting", summary.maxFunctionNestingDepth],
+    ["Conditionals", summary.conditionalCount],
+    ["Loops", summary.loopCount],
+    ["Switch statements", summary.switchCount],
+    ["Try/catch", summary.tryCatchCount],
+  ];
+
+  const visibleCount = 4;
+  const maxIndex = Math.max(0, astMetrics.length - visibleCount);
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+
+      {/* Left navigation button */}
+      <button
+        type="button"
+        onClick={() =>
+          setAstMetricIndex((current) => Math.max(0, current - 1))
+        }
+        disabled={astMetricIndex === 0}
+        aria-label="Show previous AST metric"
+        className="flex h-22 w-8 shrink-0 self-stretch items-center justify-center rounded-md bg-[#181818] text-foreground transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <ChevronLeft className="size-5" />
+      </button>
+
+      {/* Metric carousel */}
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div
+          className="flex gap-3 transition-transform duration-300 ease-in-out"
+          style={{
+            transform: `translateX(calc(${astMetricIndex} * (-25% - 2.25px)))`,
+          }}
+        >
+          {astMetrics.map(([label, value]) => (
+            <div
+              key={label}
+              className="min-w-0 flex-[0_0_calc((100%-36px)/4)] rounded-xl border border-border/70 bg-background/60 p-3 transition-colors duration-200 hover:border-primary/40 hover:bg-muted/30"
+            >
+              <p className="min-h-8 text-xs leading-4 text-muted-foreground">
+                {label}
+              </p>
+
+              <p className="mt-2 wrap-break-word text-xl font-semibold tracking-tight tabular-nums">
+                {value == null ? "—" : Number(value).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right navigation button */}
+      <button
+        type="button"
+        onClick={() =>
+          setAstMetricIndex((current) => Math.min(maxIndex, current + 1))
+        }
+        disabled={astMetricIndex >= maxIndex}
+        aria-label="Show next AST metric"
+        className="flex h-22 w-8 self-stretch shrink-0 items-center justify-center rounded-md bg-[#181818] text-foreground transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        <ChevronRight className="size-5" />
+      </button>
+
+    </div>
+  );
+})()}
+
         </Panel>
 
         <Panel
@@ -827,7 +936,7 @@ export default function CodeAnalysis({ owner, repo, branch }) {
         </Panel>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid items-stretch gap-5 xl:grid-cols-2">
         <TraversalFlow
           title="DFS traversal"
           description={`Depth-first search starting at ${traversals.startFile || "no available file"}.`}

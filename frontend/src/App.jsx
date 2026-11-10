@@ -1,5 +1,6 @@
 import './App.css'
 import { Button } from '@/components/ui/button'
+import { ShieldCheck } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import LoginPage from './components/LoginPage'
 import SignupPage from './components/SignupPage'
@@ -137,11 +138,34 @@ function App() {
     )
   }
 
-  if (error) {
+  // if (error) {
+  //   return (
+  //     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-4 text-center">
+  //       <p className="max-w-md text-sm text-destructive" role="alert">{error}</p>
+  //       <Button type="button" onClick={refresh}>Try again</Button>
+  //     </main>
+  //   )
+  // }
+
+    if (error) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-4 text-center">
-        <p className="max-w-md text-sm text-destructive" role="alert">{error}</p>
-        <Button type="button" onClick={refresh}>Try again</Button>
+        <div className="w-full max-w-md space-y-3 rounded-xl border bg-card p-6 shadow-sm">
+          <ShieldCheck className="mx-auto size-8 text-muted-foreground" />
+
+          <h2 className="text-lg font-semibold">
+            We're having trouble connecting
+          </h2>
+
+          <p className="text-sm leading-6 text-muted-foreground">
+            We couldn't check your account right now.
+            Please check your internet connection and try again.
+          </p>
+
+          <Button type="button" onClick={refresh} className="w-full">
+            Try again
+          </Button>
+        </div>
       </main>
     )
   }

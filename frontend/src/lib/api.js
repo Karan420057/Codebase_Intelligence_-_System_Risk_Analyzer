@@ -2,11 +2,20 @@ const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || ''
 ).replace(/\/$/, '');
 
+// export class ApiError extends Error {
+//   constructor(message, status) {
+//     super(message)
+//     this.name = 'ApiError'
+//     this.status = status
+//   }
+// }
+
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, code = null) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.code = code
   }
 }
 
@@ -46,8 +55,16 @@ export async function apiRequest(path, options = {}) {
     throw new ApiError('The server returned an invalid response.', response.status)
   }
 
+  // if (!response.ok) {
+  //   throw new ApiError(payload.error || 'The request could not be completed.', response.status)
+  // }
+
   if (!response.ok) {
-    throw new ApiError(payload.error || 'The request could not be completed.', response.status)
+    throw new ApiError(
+      payload.error || 'The request could not be completed.',
+      response.status,
+      payload.code || null,
+    )
   }
 
   return payload
